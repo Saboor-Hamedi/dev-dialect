@@ -1,0 +1,277 @@
+import React, { useState } from "react";
+import { supabase } from "../../supabase";
+import { useNavigate } from "react-router-dom";
+import { Save, ArrowLeft, Image as ImageIcon, X } from "lucide-react";
+
+const CreatePost = (props) => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
+
+  const [formData, setFormData] = useState({
+    title: "",
+    content: "",
+    image_url: "",
+    price: "",
+    is_public: false,
+  });
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  // Handle image file selection
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Upload image to Supabase Storage
+  const uploadImage = async () => {
+    if (!imageFile) return null;
+
+    setUploading(true);
+    try {
+      const fileExt = imageFile.name.split(".").pop();
+      const fileName = `${Math.random()
+        .toString(36)
+        .substring(2)}-${Date.now()}.${fileExt}`;
+      const filePath = `posts/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from("images") // Make sure this bucket exists in Supabase
+        .upload(filePath, imageFile);
+
+      if (error) throw error;
+
+      // Get public URL
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("images").getPublicUrl(filePath);
+
+      setUploading(false);
+      return publicUrl;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      alert("Error uploading image: " + error.message);
+      setUploading(false);
+      return null;
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      // Upload image first if there's a file
+      let imageUrl = formData.image_url;
+      if (imageFile) {
+        imageUrl = await uploadImage();
+        if (!imageUrl) {
+          setLoading(false);
+          return; // Stop if upload failed
+        }
+      }
+
+      // Insert post with image URL
+      const postData = {
+        ...formData,
+        image_url: imageUrl,
+      };
+
+      const { error } = await supabase.from("posts").insert([postData]);
+
+      if (error) throw error;
+
+      alert("Post created successfully!");
+      // Call onSuccess callback to switch back to posts view
+      if (props.onSuccess) {
+        props.onSuccess();
+      }
+    } catch (error) {
+      console.error("Error creating post:", error);
+      alert("Error creating post: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-800 dark:text-white">
+            Create New Post
+          </h1>
+          <p className="text-gray-500 mt-1">
+            Add a new project or article to your portfolio
+          </p>
+        </div>
+        <button
+          onClick={() => props.onCancel && props.onCancel()}
+          className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-primary transition-colors"
+        >
+          <ArrowLeft size={20} />
+          Back
+        </button>
+      </div>
+
+      {/* Form */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 md:p-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Title */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Title
+            </label>
+            <input
+              type="text"
+              name="title"
+              required
+              value={formData.title}
+              onChange={handleChange}
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+              placeholder="e.g., Modern React Dashboard"
+            />
+          </div>
+
+          {/* Image Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Image
+            </label>
+            <div className="flex flex-col gap-4">
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-green-600 file:cursor-pointer"
+                />
+              </div>
+              {imagePreview && (
+                <div className="relative w-full h-48 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setImageFile(null);
+                      setImagePreview("");
+                    }}
+                    className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Content */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Content / Description
+            </label>
+            <textarea
+              name="content"
+              rows="6"
+              required
+              value={formData.content}
+              onChange={handleChange}
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none"
+              placeholder="Describe your project..."
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Price */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Price (Optional)
+              </label>
+              <input
+                type="text"
+                name="price"
+                value={formData.price}
+                onChange={handleChange}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                placeholder="e.g., $29.99 or Free"
+              />
+            </div>
+
+            {/* Category */}
+            {/* <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Category
+              </label>
+              <input
+                type="text"
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                placeholder="e.g., Web Development"
+              />
+            </div> */}
+          </div>
+
+          {/* Visibility Toggle */}
+          <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-slate-700/30 rounded-lg border border-gray-100 dark:border-slate-700">
+            <input
+              type="checkbox"
+              id="is_public"
+              name="is_public"
+              checked={formData.is_public}
+              onChange={handleChange}
+              className="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary"
+            />
+            <label
+              htmlFor="is_public"
+              className="text-sm font-medium text-slate-700 dark:text-gray-200 cursor-pointer select-none"
+            >
+              Make this post public immediately
+            </label>
+          </div>
+
+          {/* Submit Button */}
+          <div className="flex justify-end pt-4">
+            <button
+              type="submit"
+              disabled={loading || uploading}
+              className="bg-primary hover:bg-green-600 text-white px-6 py-2.5 rounded-lg flex items-center gap-2 shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Save size={20} />
+              {uploading
+                ? "Uploading image..."
+                : loading
+                ? "Creating..."
+                : "Create Post"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default CreatePost;
