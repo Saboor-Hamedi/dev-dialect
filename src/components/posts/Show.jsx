@@ -20,18 +20,38 @@ const Show = ({ postId, onBack }) => {
 
   async function fetchPost() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("posts")
-      .select("*, profiles(full_name, avatar_url)")
-      .eq("id", postId)
-      .single();
+    try {
+      // Get current user session for security check
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-    if (error) {
-      console.error("Error fetching post:", error);
-    } else {
-      setPost(data);
+      if (!session) {
+        console.error("No active session");
+        setPost(null);
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("posts")
+        .select("*, profiles(full_name, avatar_url)")
+        .eq("id", postId)
+        .eq("user_id", session.user.id) // Security: Only fetch posts owned by current user
+        .single();
+
+      if (error) {
+        console.error("Error fetching post:", error);
+        setPost(null);
+      } else {
+        setPost(data);
+      }
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      setPost(null);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   if (loading) {

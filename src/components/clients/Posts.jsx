@@ -13,10 +13,11 @@ const Posts = () => {
 
   async function fetchPosts() {
     try {
-      // Fetch only 4 posts, ordered by creation date, with author info
+      // Fetch only 4 PUBLIC posts, ordered by creation date, with author info
       const { data, error } = await supabase
         .from("posts")
         .select("*, profiles(full_name, avatar_url)")
+        .eq("is_public", true) // Security: Only fetch public posts
         .order("created_at", { ascending: false })
         .limit(4);
 
@@ -25,6 +26,7 @@ const Posts = () => {
       setPosts(data || []);
     } catch (error) {
       console.error("Error fetching data:", error.message);
+      setPosts([]);
     } finally {
       setLoading(false);
     }
@@ -84,7 +86,7 @@ const Posts = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {posts.map((post) => (
               <Link
-                to={`/show/${post.id}`}
+                to={`/show/${post.slug}`}
                 key={post.id}
                 className="group relative bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border border-gray-200 dark:border-slate-700 hover:border-primary/50 dark:hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 flex flex-col h-full"
               >

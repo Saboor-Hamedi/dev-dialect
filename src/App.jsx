@@ -122,9 +122,9 @@ function App() {
             }
           />
 
-          {/* Client-side Post Viewer */}
+          {/* Client-side Post Viewer - Using slug for SEO */}
           <Route
-            path="/show/:id"
+            path="/show/:slug"
             element={
               <>
                 <Header toggleTheme={toggleTheme} darkMode={darkMode} />

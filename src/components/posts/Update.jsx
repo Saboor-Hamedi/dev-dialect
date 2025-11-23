@@ -35,10 +35,22 @@ const Update = (props) => {
   async function fetchPost() {
     setFetchingPost(true);
     try {
+      // Get current user session for security check
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        showToast("You must be logged in to edit posts", "error");
+        setFetchingPost(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from("posts")
         .select("*")
         .eq("id", postId)
+        .eq("user_id", session.user.id) // Security: Only fetch posts owned by current user
         .single();
 
       if (error) throw error;
@@ -194,6 +206,17 @@ const Update = (props) => {
     setLoading(true);
 
     try {
+      // Get current user session for security check
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        showToast("You must be logged in to update posts", "error");
+        setLoading(false);
+        return;
+      }
+
       // Upload image first if there's a new file
       let imageUrl = formData.image_url;
       if (imageFile) {
@@ -204,16 +227,20 @@ const Update = (props) => {
         }
       }
 
-      // Update post with image URL
+      // Sanitize and prepare update data
       const postData = {
-        ...formData,
+        title: formData.title.trim(), // Sanitize title
+        content: formData.content.trim(), // Sanitize content
         image_url: imageUrl,
+        price: formData.price ? parseFloat(formData.price) : null, // Ensure numeric or null
+        is_public: Boolean(formData.is_public), // Ensure boolean
       };
 
       const { error } = await supabase
         .from("posts")
         .update(postData)
-        .eq("id", postId);
+        .eq("id", postId)
+        .eq("user_id", session.user.id); // Security: Only update posts owned by current user
 
       if (error) throw error;
 

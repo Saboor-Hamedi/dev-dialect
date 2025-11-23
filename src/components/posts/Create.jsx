@@ -174,11 +174,27 @@ const Create = (props) => {
         return;
       }
 
-      // Insert post with image URL and user_id
+      // Generate slug from title
+      const slug = formData.title
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, "") // Remove special characters
+        .replace(/\s+/g, "-") // Replace spaces with hyphens
+        .replace(/-+/g, "-") // Replace multiple hyphens with single hyphen
+        .substring(0, 100); // Limit length
+
+      // Add timestamp to ensure uniqueness
+      const uniqueSlug = `${slug}-${Date.now()}`;
+
+      // Insert post with image URL, user_id, and slug
       const postData = {
-        ...formData,
+        title: formData.title.trim(), // Sanitize title
+        content: formData.content.trim(), // Sanitize content
         image_url: imageUrl,
-        user_id: session.user.id,
+        price: formData.price ? parseFloat(formData.price) : null, // Ensure numeric or null
+        is_public: Boolean(formData.is_public), // Ensure boolean
+        user_id: session.user.id, // Security: Use session user ID
+        slug: uniqueSlug, // Add generated slug
       };
 
       const { error } = await supabase.from("posts").insert([postData]);

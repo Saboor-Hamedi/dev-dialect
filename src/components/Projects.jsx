@@ -85,7 +85,7 @@ const Projects = () => {
 
   const PostCard = ({ post }) => (
     <Link
-      to={`/show/${post.id}`}
+      to={`/show/${post.slug}`}
       className="group relative bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border border-gray-200 dark:border-slate-700 hover:border-primary/50 dark:hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 flex flex-col h-full"
     >
       {/* Image */}

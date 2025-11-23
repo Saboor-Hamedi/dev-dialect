@@ -10,31 +10,39 @@ import CodeBlock from "../ui/CodeBlock";
 import { Skeleton } from "../ui/Skeleton";
 
 const ShowPost = () => {
-  const { id } = useParams();
+  const { slug } = useParams(); // Changed from id to slug
   const navigate = useNavigate();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (id) {
+    if (slug) {
       fetchPost();
     }
-  }, [id]);
+  }, [slug]);
 
   async function fetchPost() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("posts")
-      .select("*, profiles(full_name, avatar_url)")
-      .eq("id", id)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from("posts")
+        .select("*, profiles(full_name, avatar_url)")
+        .eq("slug", slug)
+        .eq("is_public", true) // Security: Only fetch public posts
+        .single();
 
-    if (error) {
-      console.error("Error fetching post:", error);
-    } else {
-      setPost(data);
+      if (error) {
+        console.error("Error fetching post:", error);
+        setPost(null);
+      } else {
+        setPost(data);
+      }
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      setPost(null);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   if (loading) {

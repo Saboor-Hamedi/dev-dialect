@@ -31,27 +31,50 @@ const Index = ({ onEdit, onView }) => {
   async function fetchPosts() {
     setLoading(true);
 
-    // Calculate range for pagination
-    const from = (currentPage - 1) * postsPerPage;
-    const to = from + postsPerPage - 1;
+    try {
+      // Get current user session for security check
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-    // Fetch total count
-    const { count } = await supabase
-      .from("posts")
-      .select("*", { count: "exact", head: true });
+      if (!session) {
+        console.error("No active session");
+        setLoading(false);
+        return;
+      }
 
-    setTotalPosts(count || 0);
+      // Calculate range for pagination
+      const from = (currentPage - 1) * postsPerPage;
+      const to = from + postsPerPage - 1;
 
-    // Fetch paginated posts
-    const { data, error } = await supabase
-      .from("posts")
-      .select("*")
-      .order("id", { ascending: false })
-      .range(from, to); // Limit to 5 posts per page
+      // Fetch total count for current user only
+      const { count } = await supabase
+        .from("posts")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", session.user.id); // Security: Only count user's posts
 
-    if (error) console.error("Error:", error);
-    else setPosts(data);
-    setLoading(false);
+      setTotalPosts(count || 0);
+
+      // Fetch paginated posts for current user only
+      const { data, error } = await supabase
+        .from("posts")
+        .select("*")
+        .eq("user_id", session.user.id) // Security: Only fetch user's posts
+        .order("id", { ascending: false })
+        .range(from, to);
+
+      if (error) {
+        console.error("Error:", error);
+        setPosts([]);
+      } else {
+        setPosts(data || []);
+      }
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      setPosts([]);
+    } finally {
+      setLoading(false);
+    }
   }
 
   // Open Delete Modal
@@ -59,28 +82,48 @@ const Index = ({ onEdit, onView }) => {
     setDeleteModal({ isOpen: true, postId: id });
   };
 
-  // 2. Delete Function
+  // 2. Delete Function with security check
   async function deletePost() {
     const id = deleteModal.postId;
     if (!id) return;
 
-    // Optimistic update: Remove locally first for instant feedback
-    setPosts((current) => current.filter((post) => post.id !== id));
+    try {
+      // Get current user session for security check
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-    const { error } = await supabase.from("posts").delete().eq("id", id);
-
-    if (error) {
-      showToast("Error deleting post", "error");
-      fetchPosts(); // Revert on error
-    } else {
-      showToast("Post deleted successfully", "success");
-      // Re-fetch posts to fill the gap from the next page
-      fetchPosts();
-
-      // If this was the last post on the page and not the first page, go back one page
-      if (posts.length === 1 && currentPage > 1) {
-        setCurrentPage((prev) => prev - 1);
+      if (!session) {
+        showToast("You must be logged in to delete posts", "error");
+        return;
       }
+
+      // Optimistic update: Remove locally first for instant feedback
+      setPosts((current) => current.filter((post) => post.id !== id));
+
+      const { error } = await supabase
+        .from("posts")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", session.user.id); // Security: Only delete user's own posts
+
+      if (error) {
+        showToast("Error deleting post", "error");
+        fetchPosts(); // Revert on error
+      } else {
+        showToast("Post deleted successfully", "success");
+        // Re-fetch posts to fill the gap from the next page
+        fetchPosts();
+
+        // If this was the last post on the page and not the first page, go back one page
+        if (posts.length === 1 && currentPage > 1) {
+          setCurrentPage((prev) => prev - 1);
+        }
+      }
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      showToast("Error deleting post", "error");
+      fetchPosts();
     }
   }
 
