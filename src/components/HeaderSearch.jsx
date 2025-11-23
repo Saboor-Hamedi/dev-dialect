@@ -1,99 +1,71 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
-import { Search, X } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Search, Command } from "lucide-react";
+import CommandPalette from "./CommandPalette";
 
 const HeaderSearch = () => {
-  const [query, setQuery] = useState("");
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [searchParams] = useSearchParams();
-  const debounceTimer = useRef(null);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
-  // Sync input with URL query parameter
+  // Global keyboard shortcut (Ctrl+K or Cmd+K)
   useEffect(() => {
-    const urlQuery = searchParams.get("q") || "";
-    setQuery(urlQuery);
-  }, [searchParams]);
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (query.trim()) {
-      navigate(`/projects?q=${encodeURIComponent(query.trim())}`);
-    }
-  };
-
-  const handleClear = () => {
-    setQuery("");
-    // Clear any pending debounce
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current);
-    }
-    // If we're on the projects page, clear the URL parameter
-    if (location.pathname === "/projects") {
-      navigate("/projects");
-    }
-  };
-
-  const handleInputChange = (e) => {
-    const newQuery = e.target.value;
-    setQuery(newQuery);
-
-    // Clear existing timer
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current);
-    }
-
-    // Only auto-search if on projects page
-    if (location.pathname === "/projects") {
-      // Debounce the search by 300ms
-      debounceTimer.current = setTimeout(() => {
-        if (newQuery.trim()) {
-          navigate(`/projects?q=${encodeURIComponent(newQuery.trim())}`);
-        } else {
-          navigate("/projects");
-        }
-      }, 300);
-    }
-  };
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current);
+    const handleKeyDown = (e) => {
+      // Check for Ctrl+K (Windows/Linux) or Cmd+K (Mac)
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setIsCommandPaletteOpen(true);
       }
     };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isCommandPaletteOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isCommandPaletteOpen]);
+
   return (
-    <form onSubmit={handleSearch} className="relative hidden lg:block group">
-      {/* Search Icon */}
-      <Search
-        size={18}
-        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors pointer-events-none"
-      />
+    <>
+      {/* Search Button - Desktop */}
+      <button
+        onClick={() => setIsCommandPaletteOpen(true)}
+        className="hidden lg:flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700 rounded-lg text-sm transition-all group w-64"
+      >
+        <Search
+          size={16}
+          className="text-gray-400 group-hover:text-primary transition-colors"
+        />
+        <span className="flex-1 text-left text-gray-500 dark:text-gray-400">
+          Search posts...
+        </span>
+        <kbd className="hidden xl:inline-flex items-center gap-0.5 px-2 py-1 text-xs font-semibold text-gray-500 bg-white dark:bg-slate-900 rounded border border-gray-300 dark:border-slate-600">
+          <Command size={12} />
+          <span>K</span>
+        </kbd>
+      </button>
 
-      {/* Input Field */}
-      <input
-        type="text"
-        placeholder="Search projects..."
-        value={query}
-        onChange={handleInputChange}
-        className="pl-10 pr-10 py-2 bg-gray-100 dark:bg-slate-800 border border-transparent focus:bg-white dark:focus:bg-slate-900 border-gray-200 dark:border-slate-700 rounded-full text-sm outline-none transition-all w-48 focus:w-64 focus:ring-2 focus:ring-primary/50 text-slate-700 dark:text-gray-200 shadow-inner"
-      />
+      {/* Search Button - Mobile */}
+      <button
+        onClick={() => setIsCommandPaletteOpen(true)}
+        className="lg:hidden p-2.5 rounded-lg bg-gray-100 dark:bg-slate-800 text-slate-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700 transition-all"
+        aria-label="Search"
+      >
+        <Search size={18} />
+      </button>
 
-      {/* Clear Button */}
-      {query && (
-        <button
-          type="button"
-          onClick={handleClear}
-          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-          aria-label="Clear search"
-        >
-          <X size={16} />
-        </button>
-      )}
-    </form>
+      {/* Command Palette Modal */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+      />
+    </>
   );
 };
 
