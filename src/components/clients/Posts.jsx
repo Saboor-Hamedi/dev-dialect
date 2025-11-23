@@ -16,8 +16,12 @@ const Posts = () => {
 
   async function fetchPosts() {
     try {
-      // This is the SQL equivalent: SELECT * FROM Posts
-      const { data, error } = await supabase.from("posts").select("*");
+      // Fetch only 4 posts, ordered by creation date
+      const { data, error } = await supabase
+        .from("posts")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(4);
 
       if (error) throw error;
 
@@ -51,12 +55,12 @@ const Posts = () => {
           {posts.map((post) => (
             <div
               key={post.id}
-              className="course-card bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all group"
+              className="course-card bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all group flex flex-col h-full"
             >
               <div className="relative">
                 {/* Use a default image if image_url is empty */}
                 <img
-                  src={post.image_url || "https://via.placeholder.com/400"}
+                  src={post.image_url || "https://placehold.co/400"}
                   alt={post.title}
                   className="w-full h-48 object-cover"
                 />
@@ -67,26 +71,24 @@ const Posts = () => {
                 </div>
               </div>
 
-              <div className="p-5">
-                <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-4 line-clamp-2 h-14">
+              <div className="p-5 flex flex-col flex-grow">
+                <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-3 line-clamp-2 min-h-[3.5rem]">
                   {post.title}
                 </h3>
 
-                <div className="flex items-center gap-2 text-gray-500 text-sm mb-4">
-                  <BookOpen size={16} className="text-secondary" />
-                  <span>{post.content || 0} Posts</span>
-                  {/* Or change this to display Description */}
-                </div>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-3 flex-grow">
+                  {post.content}
+                </p>
 
                 <hr className="border-gray-100 dark:border-slate-700 mb-4" />
 
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center mt-auto">
                   <span className="font-bold text-green-500">
                     {post.price || "Free"}
                   </span>
                   <Link
                     to={`/show/${post.id}`}
-                    className="text-sm font-semibold text-slate-700 dark:text-gray-300 hover:text-primary"
+                    className="text-sm font-semibold text-slate-700 dark:text-gray-300 hover:text-primary transition-colors"
                   >
                     View Details
                   </Link>

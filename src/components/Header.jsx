@@ -3,6 +3,8 @@ import { Search, ShoppingCart, Menu, X, Moon, Sun, User } from "lucide-react";
 import { Link, useLocation } from "react-router-dom"; // Import Link
 import "../assets/Header.css";
 import HeaderSearch from "./HeaderSearch";
+import Projects from "./Projects";
+
 const Header = ({ toggleTheme, darkMode }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
@@ -16,9 +18,6 @@ const Header = ({ toggleTheme, darkMode }) => {
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold">
-            U
-          </div>
           <span className="text-2xl font-bold text-slate-800 dark:text-white">
             Dev Dialect
           </span>
@@ -29,7 +28,9 @@ const Header = ({ toggleTheme, darkMode }) => {
           <Link to="/" className={isActive("/")}>
             Home
           </Link>
-          {/* Added Projects Link */}
+          <Link to="/projects" className={isActive("/projects")}>
+            Projects
+          </Link>
 
           <a href="#" className="nav-link">
             About
@@ -76,7 +77,7 @@ const Header = ({ toggleTheme, darkMode }) => {
             Home
           </Link>
           {/* <Link
-            to="/projectdetails"
+            to="/projects"
             className="mobile-nav-link"
             onClick={() => setIsMenuOpen(false)}
           >

@@ -246,7 +246,10 @@ const Update = (props) => {
           {/* Content */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Content / Description
+              Content / Description{" "}
+              <span className="text-xs text-gray-500">
+                (Markdown supported)
+              </span>
             </label>
             <textarea
               name="content"
@@ -254,8 +257,8 @@ const Update = (props) => {
               required
               value={formData.content}
               onChange={handleChange}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none"
-              placeholder="Describe your project..."
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none font-mono text-sm"
+              placeholder="Describe your project... (Markdown supported: # Heading, **bold**, `code`, etc.)"
             />
           </div>
 

@@ -1,30 +1,32 @@
-// Read the full post
+// Client-side post viewer with markdown support
 
 import React, { useEffect, useState } from "react";
 import { supabase } from "../../supabase";
 import { ArrowLeft, Calendar, User, Clock } from "lucide-react";
+import { Link, useParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github-dark.css";
 
-const Show = ({ postId, onBack }) => {
+const ShowPost = () => {
+  const { id } = useParams();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (postId) {
+    if (id) {
       fetchPost();
     }
-  }, [postId]);
+  }, [id]);
 
   async function fetchPost() {
     setLoading(true);
     const { data, error } = await supabase
       .from("posts")
       .select("*")
-      .eq("id", postId)
-      .single(); // .single() ensures we get one object, not an array
+      .eq("id", id)
+      .single();
 
     if (error) {
       console.error("Error fetching post:", error);
@@ -41,12 +43,12 @@ const Show = ({ postId, onBack }) => {
     <article className="min-h-screen bg-white dark:bg-slate-900 py-12">
       <div className="container mx-auto px-4 max-w-4xl">
         {/* Back Button */}
-        <button
-          onClick={onBack}
+        <Link
+          to="/"
           className="inline-flex items-center gap-2 text-gray-500 hover:text-primary mb-8 transition-colors"
         >
-          <ArrowLeft size={20} /> Back to Projects
-        </button>
+          <ArrowLeft size={20} /> Back to Home
+        </Link>
 
         {/* Header Section */}
         <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6 leading-tight">
@@ -93,4 +95,4 @@ const Show = ({ postId, onBack }) => {
   );
 };
 
-export default Show;
+export default ShowPost;

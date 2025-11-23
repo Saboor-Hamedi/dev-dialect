@@ -5,9 +5,9 @@ import Hero from "./components/Hero";
 import Categories from "./components/categories/Categories";
 import Features from "./components/Features";
 import Posts from "./components/clients/Posts";
+import ShowPost from "./components/clients/ShowPost";
 import Dashboard from "./components/dashboard/Dashboard";
 import Projects from "./components/Projects";
-import Show from "./components/posts/Show";
 import Update from "./components/posts/Update";
 import "./index.css";
 
@@ -67,7 +67,21 @@ function App() {
               </>
             }
           />
-          <Route path="/show/:id" element={<Show />} />
+
+          {/* Client-side Post Viewer */}
+          <Route
+            path="/show/:id"
+            element={
+              <>
+                <Header toggleTheme={toggleTheme} darkMode={darkMode} />
+                <ShowPost />
+                <footer className="bg-gray-100 dark:bg-slate-800 py-8 text-center text-gray-600 dark:text-gray-300 mt-12">
+                  <p>© 2025 Upstudy. All rights reserved.</p>
+                </footer>
+              </>
+            }
+          />
+
           <Route path="/posts/:id/update" element={<Update />} />
           <Route path="/dashboard" element={<Dashboard />} />
         </Routes>
