@@ -65,18 +65,12 @@ const Header = ({ toggleTheme, darkMode }) => {
             <Link to="/projects" className={isActive("/projects")}>
               Projects
             </Link>
-            <a
-              href="#about"
-              className="text-slate-700 dark:text-gray-300 hover:text-primary transition-colors"
-            >
+            <Link to="/about" className={isActive("/about")}>
               About
-            </a>
-            <a
-              href="#contact"
-              className="text-slate-700 dark:text-gray-300 hover:text-primary transition-colors"
-            >
+            </Link>
+            <Link to="/contact" className={isActive("/contact")}>
               Contact
-            </a>
+            </Link>
           </nav>
 
           {/* Actions - Improved Layout */}
@@ -137,20 +131,20 @@ const Header = ({ toggleTheme, darkMode }) => {
             >
               Projects
             </Link>
-            <a
-              href="#about"
+            <Link
+              to="/about"
               className="px-4 py-2 rounded-lg text-slate-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               About
-            </a>
-            <a
-              href="#contact"
+            </Link>
+            <Link
+              to="/contact"
               className="px-4 py-2 rounded-lg text-slate-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               Contact
-            </a>
+            </Link>
 
             <hr className="border-gray-200 dark:border-slate-700 my-2" />
 

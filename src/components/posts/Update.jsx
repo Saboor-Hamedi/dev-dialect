@@ -14,6 +14,9 @@ const Update = (props) => {
   const [imagePreview, setImagePreview] = useState("");
   const [fetchingPost, setFetchingPost] = useState(true);
 
+  // Validation state
+  const [formErrors, setFormErrors] = useState({});
+
   const [formData, setFormData] = useState({
     title: "",
     content: "",
@@ -67,12 +70,74 @@ const Update = (props) => {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+    // Clear error when user types
+    if (formErrors[name]) {
+      setFormErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
   };
 
-  // Handle image file selection
+  // Validate form fields
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.title.trim()) errors.title = "Title is required";
+    if (!formData.content.trim()) errors.content = "Content is required";
+
+    // Price validation: allow empty (optional), but if present must be a number
+    if (formData.price && isNaN(Number(formData.price))) {
+      errors.price = "Price must be a valid number";
+    }
+
+    if (imageFile) {
+      const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif",
+      ];
+      if (!allowedTypes.includes(imageFile.type)) {
+        errors.image = "Unsupported image type. Use JPEG, PNG, WebP, or GIF.";
+      }
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (imageFile.size > maxSize) {
+        errors.image = "Image must be smaller than 5MB.";
+      }
+    }
+
+    return errors;
+  };
+
+  // Handle image file selection with validation
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Validate immediately on selection
+      const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif",
+      ];
+      const maxSize = 5 * 1024 * 1024; // 5MB
+
+      if (!allowedTypes.includes(file.type)) {
+        setFormErrors((prev) => ({
+          ...prev,
+          image: "Unsupported image type. Use JPEG, PNG, WebP, or GIF.",
+        }));
+        return;
+      }
+
+      if (file.size > maxSize) {
+        setFormErrors((prev) => ({
+          ...prev,
+          image: "Image must be smaller than 5MB.",
+        }));
+        return;
+      }
+
+      // Clear previous image errors
+      setFormErrors((prev) => ({ ...prev, image: undefined }));
+
       setImageFile(file);
       // Create preview
       const reader = new FileReader();
@@ -118,6 +183,14 @@ const Update = (props) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Run validation
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -194,17 +267,23 @@ const Update = (props) => {
           {/* Title Field */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Title
+              Title <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               name="title"
-              required
               value={formData.title}
               onChange={handleChange}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+              className={`w-full px-4 py-2 rounded-lg border ${
+                formErrors.title
+                  ? "border-red-500"
+                  : "border-gray-300 dark:border-slate-600"
+              } bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all`}
               placeholder="e.g., Modern React Dashboard"
             />
+            {formErrors.title && (
+              <p className="mt-1 text-xs text-red-500">{formErrors.title}</p>
+            )}
           </div>
 
           {/* Image Upload */}
@@ -218,9 +297,16 @@ const Update = (props) => {
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-green-600 file:cursor-pointer"
+                  className={`w-full px-4 py-2 rounded-lg border ${
+                    formErrors.image
+                      ? "border-red-500"
+                      : "border-gray-300 dark:border-slate-600"
+                  } bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-green-600 file:cursor-pointer`}
                 />
               </div>
+              {formErrors.image && (
+                <p className="mt-1 text-xs text-red-500">{formErrors.image}</p>
+              )}
               {imagePreview && (
                 <div className="relative w-full h-48 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
                   <img
@@ -233,6 +319,7 @@ const Update = (props) => {
                     onClick={() => {
                       setImageFile(null);
                       setImagePreview("");
+                      setFormErrors((prev) => ({ ...prev, image: undefined }));
                     }}
                     className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
                   >
@@ -246,7 +333,7 @@ const Update = (props) => {
           {/* Content */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Content / Description{" "}
+              Content / Description <span className="text-red-500">*</span>{" "}
               <span className="text-xs text-gray-500">
                 (Markdown supported)
               </span>
@@ -254,12 +341,18 @@ const Update = (props) => {
             <textarea
               name="content"
               rows="6"
-              required
               value={formData.content}
               onChange={handleChange}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none font-mono text-sm"
+              className={`w-full px-4 py-2 rounded-lg border ${
+                formErrors.content
+                  ? "border-red-500"
+                  : "border-gray-300 dark:border-slate-600"
+              } bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none font-mono text-sm`}
               placeholder="Describe your project... (Markdown supported: # Heading, **bold**, `code`, etc.)"
             />
+            {formErrors.content && (
+              <p className="mt-1 text-xs text-red-500">{formErrors.content}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -273,25 +366,17 @@ const Update = (props) => {
                 name="price"
                 value={formData.price}
                 onChange={handleChange}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
-                placeholder="e.g., $29.99 or Free"
+                className={`w-full px-4 py-2 rounded-lg border ${
+                  formErrors.price
+                    ? "border-red-500"
+                    : "border-gray-300 dark:border-slate-600"
+                } bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all`}
+                placeholder="e.g., 29.99"
               />
+              {formErrors.price && (
+                <p className="mt-1 text-xs text-red-500">{formErrors.price}</p>
+              )}
             </div>
-
-            {/* Category */}
-            {/* <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Category
-              </label>
-              <input
-                type="text"
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
-                placeholder="e.g., Web Development"
-              />
-            </div> */}
           </div>
 
           {/* Visibility Toggle */}

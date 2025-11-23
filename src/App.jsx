@@ -12,6 +12,8 @@ import Projects from "./components/Projects";
 import Update from "./components/posts/Update";
 import Login from "./components/auth/Login";
 import ResetPassword from "./components/auth/ResetPassword";
+import Contact from "./components/Contact";
+import About from "./components/About";
 import "./index.css";
 
 import { ToastProvider } from "./context/ToastContext";
@@ -136,6 +138,32 @@ function App() {
 
           <Route path="/login" element={<Login />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+
+          <Route
+            path="/contact"
+            element={
+              <>
+                <Header toggleTheme={toggleTheme} darkMode={darkMode} />
+                <Contact />
+                <footer className="bg-gray-100 dark:bg-slate-800 py-8 text-center text-gray-600 dark:text-gray-300">
+                  <p>© 2025 Upstudy. All rights reserved.</p>
+                </footer>
+              </>
+            }
+          />
+
+          <Route
+            path="/about"
+            element={
+              <>
+                <Header toggleTheme={toggleTheme} darkMode={darkMode} />
+                <About />
+                <footer className="bg-gray-100 dark:bg-slate-800 py-8 text-center text-gray-600 dark:text-gray-300">
+                  <p>© 2025 Upstudy. All rights reserved.</p>
+                </footer>
+              </>
+            }
+          />
 
           <Route
             path="/dashboard"

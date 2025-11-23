@@ -178,9 +178,7 @@ const Index = ({ onEdit, onView }) => {
                     <td className="p-4">
                       <div className="h-12 w-20 rounded overflow-hidden bg-gray-200 border border-gray-300 dark:border-slate-600">
                         <img
-                          src={
-                            post.image_url || "https://via.placeholder.com/150"
-                          }
+                          src={post.image_url || "https://placehold.co/150x100"}
                           alt="Thumb"
                           className="h-full w-full object-cover"
                         />

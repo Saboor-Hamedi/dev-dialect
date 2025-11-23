@@ -105,6 +105,39 @@ const Account = () => {
     }
   };
 
+  // Avatar upload state
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  const handleAvatarUpload = async (e) => {
+    try {
+      setUploadingAvatar(true);
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("images")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("images").getPublicUrl(filePath);
+
+      setProfile((prev) => ({ ...prev, avatar_url: publicUrl }));
+      showToast("Avatar uploaded successfully!", "success");
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      showToast("Error uploading avatar", "error");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-8 text-center text-gray-500">Loading profile...</div>
@@ -124,7 +157,7 @@ const Account = () => {
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6 space-y-6">
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <div className="relative group">
-              <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary text-3xl font-bold border-4 border-white dark:border-slate-800 shadow-lg overflow-hidden">
+              <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary text-3xl font-bold border-4 border-white dark:border-slate-800 shadow-lg overflow-hidden relative">
                 {profile.avatar_url ? (
                   <img
                     src={profile.avatar_url}
@@ -138,8 +171,25 @@ const Account = () => {
                     "U"
                   ).toUpperCase()
                 )}
+                {uploadingAvatar && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                    <Loader2 className="animate-spin text-white" size={24} />
+                  </div>
+                )}
               </div>
-              {/* Avatar upload could go here */}
+              <label className="absolute bottom-0 right-0 bg-white dark:bg-slate-700 p-2 rounded-full shadow-md border border-gray-200 dark:border-slate-600 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors">
+                <Camera
+                  size={16}
+                  className="text-gray-600 dark:text-gray-300"
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                  disabled={uploadingAvatar}
+                />
+              </label>
             </div>
             <div className="text-center sm:text-left">
               <h4 className="text-xl font-bold text-slate-800 dark:text-white">
