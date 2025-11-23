@@ -1,25 +1,41 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "../../supabase";
 import {
-  HousePlus,
+  LayoutDashboard,
   FileText,
-  Settings,
+  Settings as SettingsIcon,
   LogOut,
   Menu,
   X,
   Plus,
 } from "lucide-react";
+import Overview from "./Overview";
 import Show from "../posts/Show";
 import Index from "../posts/Index";
 import Create from "../posts/Create";
 import Update from "../posts/Update";
 
+import Settings from "./settings/Settings";
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeView, setActiveView] = useState("posts");
+  const [activeView, setActiveView] = useState(
+    localStorage.getItem("dashboardView") || "overview"
+  );
   const [editingPostId, setEditingPostId] = useState(null);
   const [viewingPostId, setViewingPostId] = useState(null);
+
+  const handleViewChange = (view) => {
+    setActiveView(view);
+    localStorage.setItem("dashboardView", view);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
@@ -57,13 +73,28 @@ const Dashboard = () => {
               to="/"
               className="flex items-center gap-3 px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-sm"
             >
-              <HousePlus size={18} />
+              <LayoutDashboard size={18} />
               Home
             </Link>
 
             <button
               onClick={() => {
-                setActiveView("posts");
+                handleViewChange("overview");
+                setSidebarOpen(false);
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm ${
+                activeView === "overview"
+                  ? "bg-primary/10 text-primary font-semibold"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
+              }`}
+            >
+              <LayoutDashboard size={18} />
+              Overview
+            </button>
+
+            <button
+              onClick={() => {
+                handleViewChange("posts");
                 setSidebarOpen(false);
               }}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm ${
@@ -78,7 +109,7 @@ const Dashboard = () => {
 
             <button
               onClick={() => {
-                setActiveView("create");
+                handleViewChange("create");
                 setSidebarOpen(false);
               }}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm ${
@@ -93,7 +124,7 @@ const Dashboard = () => {
 
             <button
               onClick={() => {
-                setActiveView("settings");
+                handleViewChange("settings");
                 setSidebarOpen(false);
               }}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm ${
@@ -102,20 +133,20 @@ const Dashboard = () => {
                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
               }`}
             >
-              <Settings size={18} />
+              <SettingsIcon size={18} />
               Settings
             </button>
           </nav>
 
           {/* Sidebar Footer */}
           <div className="p-4 border-t border-gray-200 dark:border-slate-700 flex-shrink-0">
-            <Link
-              to="/"
-              className="flex items-center gap-3 px-4 py-2.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-sm font-medium"
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-sm font-medium"
             >
               <LogOut size={18} />
               Exit Dashboard
-            </Link>
+            </button>
           </div>
         </div>
       </aside>
@@ -139,6 +170,10 @@ const Dashboard = () => {
         <div className="flex-1 overflow-y-auto p-4 lg:p-8">
           <div className="max-w-5xl mx-auto">
             {/* Conditional Rendering based on activeView */}
+            {activeView === "overview" && (
+              <Overview onNavigate={handleViewChange} />
+            )}
+
             {activeView === "posts" && (
               <>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
@@ -148,7 +183,7 @@ const Dashboard = () => {
                     </h1>
                   </div>
                   <button
-                    onClick={() => setActiveView("create")}
+                    onClick={() => handleViewChange("create")}
                     className="bg-primary hover:bg-green-600 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 shadow-md transition-all text-sm font-semibold"
                   >
                     <Plus size={18} /> Add New Post
@@ -157,11 +192,11 @@ const Dashboard = () => {
                 <Index
                   onEdit={(postId) => {
                     setEditingPostId(postId);
-                    setActiveView("update");
+                    handleViewChange("update");
                   }}
                   onView={(postId) => {
                     setViewingPostId(postId);
-                    setActiveView("show");
+                    handleViewChange("show");
                   }}
                 />
               </>
@@ -169,8 +204,8 @@ const Dashboard = () => {
 
             {activeView === "create" && (
               <Create
-                onCancel={() => setActiveView("posts")}
-                onSuccess={() => setActiveView("posts")}
+                onCancel={() => handleViewChange("posts")}
+                onSuccess={() => handleViewChange("posts")}
               />
             )}
 
@@ -178,11 +213,11 @@ const Dashboard = () => {
               <Update
                 postId={editingPostId}
                 onCancel={() => {
-                  setActiveView("posts");
+                  handleViewChange("posts");
                   setEditingPostId(null);
                 }}
                 onSuccess={() => {
-                  setActiveView("posts");
+                  handleViewChange("posts");
                   setEditingPostId(null);
                 }}
               />
@@ -192,17 +227,13 @@ const Dashboard = () => {
               <Show
                 postId={viewingPostId}
                 onBack={() => {
-                  setActiveView("posts");
+                  handleViewChange("posts");
                   setViewingPostId(null);
                 }}
               />
             )}
 
-            {activeView === "settings" && (
-              <div className="text-center py-20 text-gray-500">
-                Settings panel coming soon...
-              </div>
-            )}
+            {activeView === "settings" && <Settings />}
           </div>
         </div>
       </main>

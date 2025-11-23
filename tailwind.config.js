@@ -8,7 +8,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#00B894', // The teal/green color from image
+        primary: 'var(--color-primary)', // Dynamic primary color
         secondary: '#FDCB6E', // The yellow accent
         dark: '#2D3436',
       }

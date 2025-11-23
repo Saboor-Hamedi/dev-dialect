@@ -1,12 +1,30 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Menu, X, Moon, Sun, Sparkles } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { supabase } from "../supabase";
 import "../assets/Header.css";
 import HeaderSearch from "./HeaderSearch";
 
 const Header = ({ toggleTheme, darkMode }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [session, setSession] = useState(null);
   const location = useLocation();
+
+  useEffect(() => {
+    // Check current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Helper to check if link is active
   const isActive = (path) =>
@@ -82,10 +100,10 @@ const Header = ({ toggleTheme, darkMode }) => {
               </button>
 
               <Link
-                to="/dashboard"
+                to={session ? "/dashboard" : "/login"}
                 className="px-4 py-2.5 bg-gradient-to-r from-primary to-green-600 text-white text-sm font-semibold rounded-lg hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 "
               >
-                Admin
+                {session ? "Dashboard" : "Login"}
               </Link>
             </div>
           </div>
@@ -137,11 +155,11 @@ const Header = ({ toggleTheme, darkMode }) => {
             <hr className="border-gray-200 dark:border-slate-700 my-2" />
 
             <Link
-              to="/dashboard"
+              to={session ? "/dashboard" : "/login"}
               className="px-4 py-2 bg-gradient-to-r from-primary to-green-600 text-white text-center font-semibold rounded-lg shadow-lg shadow-primary/20"
               onClick={() => setIsMenuOpen(false)}
             >
-              Admin Dashboard
+              {session ? "Dashboard" : "Login"}
             </Link>
 
             <button
