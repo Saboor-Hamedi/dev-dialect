@@ -14,6 +14,7 @@ import Login from "./components/auth/Login";
 import ResetPassword from "./components/auth/ResetPassword";
 import Contact from "./components/Contact";
 import About from "./components/About";
+import NotFound from "./components/NotFound";
 import "./index.css";
 
 import { ToastProvider } from "./context/ToastContext";
@@ -183,6 +184,9 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* 404 - Catch all unmatched routes */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
     </ToastProvider>

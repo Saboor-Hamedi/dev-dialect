@@ -12,6 +12,7 @@ import {
   History,
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
+import { Skeleton } from "./ui/Skeleton";
 
 const Projects = () => {
   const [newPosts, setNewPosts] = useState([]);
@@ -168,8 +169,25 @@ const Projects = () => {
   if (loading) {
     return (
       <section className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-slate-900 dark:to-slate-800 py-20">
-        <div className="flex justify-center items-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <Skeleton className="w-48 h-8 mx-auto mb-4" />
+            <Skeleton className="w-96 h-12 mx-auto mb-2" />
+            <Skeleton className="w-64 h-6 mx-auto" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div
+                key={i}
+                className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border border-gray-200 dark:border-slate-700 p-4"
+              >
+                <Skeleton className="w-full h-48 mb-4" />
+                <Skeleton className="w-3/4 h-6 mb-2" />
+                <Skeleton className="w-full h-4 mb-2" />
+                <Skeleton className="w-5/6 h-4" />
+              </div>
+            ))}
+          </div>
         </div>
       </section>
     );

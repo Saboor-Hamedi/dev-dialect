@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Calendar, User, ArrowRight, Sparkles, Eye } from "lucide-react";
 import { supabase } from "../../supabase";
 import { Link } from "react-router-dom";
+import { Skeleton } from "../ui/Skeleton";
 
 const Posts = () => {
   const [posts, setPosts] = useState([]);
@@ -36,8 +37,18 @@ const Posts = () => {
     return (
       <section className="py-20 bg-gradient-to-b from-gray-50 to-white dark:from-slate-800 dark:to-slate-900">
         <div className="container mx-auto px-4">
-          <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div
+                key={i}
+                className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border border-gray-200 dark:border-slate-700 p-4"
+              >
+                <Skeleton className="w-full h-48 mb-4" />
+                <Skeleton className="w-3/4 h-6 mb-2" />
+                <Skeleton className="w-full h-4 mb-2" />
+                <Skeleton className="w-5/6 h-4" />
+              </div>
+            ))}
           </div>
         </div>
       </section>

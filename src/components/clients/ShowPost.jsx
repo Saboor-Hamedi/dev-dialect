@@ -2,7 +2,16 @@
 
 import React, { useEffect, useState } from "react";
 import { supabase } from "../../supabase";
-import { ArrowLeft, Calendar, Clock, Share2, Bookmark } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  Clock,
+  Share2,
+  Bookmark,
+  Link2,
+  Check,
+  ArrowUp,
+} from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -14,12 +23,51 @@ const ShowPost = () => {
   const navigate = useNavigate();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const [readingProgress, setReadingProgress] = useState(0);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
     if (slug) {
       fetchPost();
     }
   }, [slug]);
+
+  // Track reading progress and scroll position
+  useEffect(() => {
+    const handleScroll = () => {
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      const scrollTop = window.scrollY;
+
+      // Calculate reading progress
+      const totalHeight = documentHeight - windowHeight;
+      const progress = (scrollTop / totalHeight) * 100;
+      setReadingProgress(Math.min(progress, 100));
+
+      // Show scroll to top button after scrolling 300px
+      setShowScrollTop(scrollTop > 300);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Copy link to clipboard
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
+  // Scroll to top smoothly
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   async function fetchPost() {
     setLoading(true);
@@ -181,11 +229,26 @@ const ShowPost = () => {
               </div>
 
               <div className="ml-auto flex gap-2">
-                <button className="p-2 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-full transition-colors">
-                  <Share2 size={20} />
-                </button>
-                <button className="p-2 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-full transition-colors">
-                  <Bookmark size={20} />
+                <button
+                  onClick={handleCopyLink}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                    copied
+                      ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                      : "bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 hover:bg-primary/10 dark:hover:bg-primary/20 hover:text-primary"
+                  }`}
+                  title="Copy link to clipboard"
+                >
+                  {copied ? (
+                    <>
+                      <Check size={18} />
+                      <span className="hidden sm:inline">Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Link2 size={18} />
+                      <span className="hidden sm:inline">Copy Link</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -204,6 +267,25 @@ const ShowPost = () => {
           </div>
         </div>
       </div>
+
+      {/* Reading Progress Bar */}
+      <div className="fixed top-0 left-0 right-0 h-1 bg-gray-200 dark:bg-slate-700 z-50">
+        <div
+          className="h-full bg-gradient-to-r from-primary to-green-600 transition-all duration-150"
+          style={{ width: `${readingProgress}%` }}
+        />
+      </div>
+
+      {/* Scroll to Top Button */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-8 right-8 p-3 bg-primary hover:bg-green-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 z-40 animate-in fade-in slide-in-from-bottom-4"
+          aria-label="Scroll to top"
+        >
+          <ArrowUp size={24} />
+        </button>
+      )}
     </article>
   );
 };
