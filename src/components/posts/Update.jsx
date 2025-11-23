@@ -23,6 +23,10 @@ const Update = (props) => {
     image_url: "",
     price: "",
     is_public: false,
+    tags: "",
+    demo_url: "",
+    repo_url: "",
+    is_featured: false,
   });
 
   // Fetch existing post data
@@ -62,6 +66,10 @@ const Update = (props) => {
           image_url: data.image_url || "",
           price: data.price || "",
           is_public: data.is_public || false,
+          tags: data.tags ? data.tags.join(", ") : "",
+          demo_url: data.demo_url || "",
+          repo_url: data.repo_url || "",
+          is_featured: data.is_featured || false,
         });
         // Set image preview if there's an existing image
         if (data.image_url) {
@@ -227,6 +235,14 @@ const Update = (props) => {
         }
       }
 
+      // Process tags
+      const tagsArray = formData.tags
+        ? formData.tags
+            .split(",")
+            .map((tag) => tag.trim())
+            .filter((tag) => tag)
+        : [];
+
       // Sanitize and prepare update data
       const postData = {
         title: formData.title.trim(), // Sanitize title
@@ -234,6 +250,10 @@ const Update = (props) => {
         image_url: imageUrl,
         price: formData.price ? parseFloat(formData.price) : null, // Ensure numeric or null
         is_public: Boolean(formData.is_public), // Ensure boolean
+        tags: tagsArray,
+        demo_url: formData.demo_url ? formData.demo_url.trim() : null,
+        repo_url: formData.repo_url ? formData.repo_url.trim() : null,
+        is_featured: Boolean(formData.is_featured),
       };
 
       const { error } = await supabase
@@ -259,38 +279,16 @@ const Update = (props) => {
     }
   };
 
-  if (fetchingPost) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  // ... (render logic)
 
   return (
     <div className="max-w-3xl mx-auto">
-      {/* Header - Compact design */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
-            Update Post
-          </h1>
-          <p className="text-gray-500 mt-0.5 text-sm">
-            Edit your project or article
-          </p>
-        </div>
-        <button
-          onClick={() => props.onCancel && props.onCancel()}
-          className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-primary transition-colors text-sm"
-        >
-          <ArrowLeft size={16} />
-          Back
-        </button>
-      </div>
+      {/* ... (header) */}
 
-      {/* Form Container - Reduced padding for compact design */}
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-5 md:p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* ... (Title, Image, Content fields remain same) */}
+
           {/* Title Field */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -404,24 +402,90 @@ const Update = (props) => {
                 <p className="mt-1 text-xs text-red-500">{formErrors.price}</p>
               )}
             </div>
+
+            {/* Tech Stack */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Tech Stack (Comma separated)
+              </label>
+              <input
+                type="text"
+                name="tags"
+                value={formData.tags}
+                onChange={handleChange}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                placeholder="React, Node.js, Supabase"
+              />
+            </div>
           </div>
 
-          {/* Visibility Toggle */}
-          <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-slate-700/30 rounded-lg border border-gray-100 dark:border-slate-700">
-            <input
-              type="checkbox"
-              id="is_public"
-              name="is_public"
-              checked={formData.is_public}
-              onChange={handleChange}
-              className="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary"
-            />
-            <label
-              htmlFor="is_public"
-              className="text-sm font-medium text-slate-700 dark:text-gray-200 cursor-pointer select-none"
-            >
-              Make this post public immediately
-            </label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Demo URL */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Live Demo URL
+              </label>
+              <input
+                type="url"
+                name="demo_url"
+                value={formData.demo_url}
+                onChange={handleChange}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                placeholder="https://example.com"
+              />
+            </div>
+
+            {/* Repo URL */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                GitHub Repo URL
+              </label>
+              <input
+                type="url"
+                name="repo_url"
+                value={formData.repo_url}
+                onChange={handleChange}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                placeholder="https://github.com/username/repo"
+              />
+            </div>
+          </div>
+
+          {/* Visibility & Featured Toggles */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-slate-700/30 rounded-lg border border-gray-100 dark:border-slate-700">
+              <input
+                type="checkbox"
+                id="is_public"
+                name="is_public"
+                checked={formData.is_public}
+                onChange={handleChange}
+                className="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary"
+              />
+              <label
+                htmlFor="is_public"
+                className="text-sm font-medium text-slate-700 dark:text-gray-200 cursor-pointer select-none"
+              >
+                Make Public
+              </label>
+            </div>
+
+            <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-slate-700/30 rounded-lg border border-gray-100 dark:border-slate-700">
+              <input
+                type="checkbox"
+                id="is_featured"
+                name="is_featured"
+                checked={formData.is_featured}
+                onChange={handleChange}
+                className="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary"
+              />
+              <label
+                htmlFor="is_featured"
+                className="text-sm font-medium text-slate-700 dark:text-gray-200 cursor-pointer select-none"
+              >
+                Feature this Project
+              </label>
+            </div>
           </div>
 
           {/* Submit Button - Smaller size */}

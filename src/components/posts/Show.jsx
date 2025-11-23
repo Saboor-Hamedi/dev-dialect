@@ -2,7 +2,15 @@
 
 import React, { useEffect, useState } from "react";
 import { supabase } from "../../supabase";
-import { ArrowLeft, Calendar, Clock, Share2, Bookmark } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  Clock,
+  Share2,
+  Bookmark,
+  ExternalLink,
+  Github,
+} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import CodeBlock from "../ui/CodeBlock";
@@ -198,6 +206,53 @@ const Show = ({ postId, onBack }) => {
                 </button>
               </div>
             </div>
+
+            {/* Project Details: Tags & Links */}
+            {(post.tags?.length > 0 || post.demo_url || post.repo_url) && (
+              <div className="bg-gray-50 dark:bg-slate-700/30 rounded-xl p-6 mb-8 border border-gray-100 dark:border-slate-700">
+                <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
+                  {/* Tags */}
+                  {post.tags?.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {post.tags.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 bg-white dark:bg-slate-800 text-slate-700 dark:text-gray-300 text-sm font-medium rounded-full border border-gray-200 dark:border-slate-600 shadow-sm"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-wrap gap-3 w-full md:w-auto">
+                    {post.demo_url && (
+                      <a
+                        href={post.demo_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-primary hover:bg-green-600 text-white rounded-lg font-semibold transition-all shadow-md hover:shadow-lg"
+                      >
+                        <ExternalLink size={18} />
+                        Live Demo
+                      </a>
+                    )}
+                    {post.repo_url && (
+                      <a
+                        href={post.repo_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-900 dark:bg-slate-900 dark:hover:bg-black text-white rounded-lg font-semibold transition-all shadow-md hover:shadow-lg"
+                      >
+                        <Github size={18} />
+                        View Code
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Markdown Content */}
             <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-bold prose-headings:text-slate-900 dark:prose-headings:text-white prose-p:text-gray-600 dark:prose-p:text-gray-300 prose-a:text-primary hover:prose-a:text-green-600 prose-img:rounded-xl prose-img:shadow-md">
