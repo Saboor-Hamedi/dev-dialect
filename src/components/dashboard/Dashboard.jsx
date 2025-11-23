@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase";
 import {
@@ -9,12 +9,14 @@ import {
   Menu,
   X,
   Plus,
+  MessageSquare,
 } from "lucide-react";
 import Overview from "./Overview";
 import Show from "../posts/Show";
 import Index from "../posts/Index";
 import Create from "../posts/Create";
 import Update from "../posts/Update";
+import Contacts from "./Contacts";
 
 import Settings from "./settings/Settings";
 
@@ -26,6 +28,29 @@ const Dashboard = () => {
   );
   const [editingPostId, setEditingPostId] = useState(null);
   const [viewingPostId, setViewingPostId] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fetch unread contacts count
+  useEffect(() => {
+    fetchUnreadCount();
+    // Refresh count every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  async function fetchUnreadCount() {
+    try {
+      const { count, error } = await supabase
+        .from("contacts")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "unread");
+
+      if (error) throw error;
+      setUnreadCount(count || 0);
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+    }
+  }
 
   const handleViewChange = (view) => {
     setActiveView(view);
@@ -124,6 +149,26 @@ const Dashboard = () => {
 
             <button
               onClick={() => {
+                handleViewChange("contacts");
+                setSidebarOpen(false);
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm ${
+                activeView === "contacts"
+                  ? "bg-primary/10 text-primary font-semibold"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
+              }`}
+            >
+              <MessageSquare size={18} />
+              <span className="flex-1 text-left">Contact Messages</span>
+              {unreadCount > 0 && (
+                <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] text-center">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => {
                 handleViewChange("settings");
                 setSidebarOpen(false);
               }}
@@ -204,32 +249,29 @@ const Dashboard = () => {
 
             {activeView === "create" && (
               <Create
-                onCancel={() => handleViewChange("posts")}
-                onSuccess={() => handleViewChange("posts")}
-              />
-            )}
-
-            {activeView === "update" && editingPostId && (
-              <Update
-                postId={editingPostId}
-                onCancel={() => {
-                  handleViewChange("posts");
-                  setEditingPostId(null);
-                }}
                 onSuccess={() => {
                   handleViewChange("posts");
-                  setEditingPostId(null);
                 }}
               />
             )}
 
-            {activeView === "show" && viewingPostId && (
+            {activeView === "contacts" && (
+              <Contacts onCountChange={fetchUnreadCount} />
+            )}
+
+            {activeView === "update" && (
+              <Update
+                postId={editingPostId}
+                onSuccess={() => {
+                  handleViewChange("posts");
+                }}
+              />
+            )}
+
+            {activeView === "show" && (
               <Show
                 postId={viewingPostId}
-                onBack={() => {
-                  handleViewChange("posts");
-                  setViewingPostId(null);
-                }}
+                onBack={() => handleViewChange("posts")}
               />
             )}
 

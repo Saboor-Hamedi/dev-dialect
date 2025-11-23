@@ -1,13 +1,7 @@
 import React, { useState } from "react";
-import {
-  Mail,
-  Phone,
-  MapPin,
-  Send,
-  MessageSquare,
-  CheckCircle,
-} from "lucide-react";
+import { Mail, Phone, MapPin, Send, CheckCircle } from "lucide-react";
 import { useToast } from "../context/ToastContext";
+import { supabase } from "../supabase";
 
 const Contact = () => {
   const { showToast } = useToast();
@@ -20,21 +14,95 @@ const Contact = () => {
     message: "",
   });
 
+  const MAX_MESSAGE_LENGTH = 150;
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    if (name === "message") {
+      // Strict length check
+      if (value.length <= MAX_MESSAGE_LENGTH) {
+        setFormData({ ...formData, [name]: value });
+      }
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const handlePaste = (e) => {
+    if (e.target.name === "message") {
+      e.preventDefault();
+      const pastedText = e.clipboardData.getData("text");
+      const currentText = formData.message;
+      const remainingChars = MAX_MESSAGE_LENGTH - currentText.length;
+
+      if (remainingChars > 0) {
+        const textToInsert = pastedText.slice(0, remainingChars);
+        const newValue = currentText + textToInsert;
+        setFormData({ ...formData, message: newValue });
+      }
+    }
+  };
+
+  const sanitizeInput = (input) => {
+    // Basic sanitization to prevent XSS and other injections
+    return input
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;")
+      .trim();
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      // Validate length one last time
+      if (formData.message.length > MAX_MESSAGE_LENGTH) {
+        throw new Error(
+          `Message must be ${MAX_MESSAGE_LENGTH} characters or less.`
+        );
+      }
 
-    setLoading(false);
-    setSubmitted(true);
-    showToast("Message sent successfully!", "success");
-    setFormData({ name: "", email: "", subject: "", message: "" });
+      // Sanitize inputs
+      const sanitizedData = {
+        name: sanitizeInput(formData.name),
+        email: sanitizeInput(formData.email),
+        subject: sanitizeInput(formData.subject),
+        message: sanitizeInput(formData.message),
+      };
+
+      // Insert contact message into database
+      const { error } = await supabase.from("contacts").insert([
+        {
+          name: sanitizedData.name,
+          email: sanitizedData.email,
+          subject: sanitizedData.subject,
+          message: sanitizedData.message,
+          status: "unread",
+        },
+      ]);
+
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
+
+      setSubmitted(true);
+      showToast("Message sent successfully!", "success");
+      setFormData({ name: "", email: "", subject: "", message: "" });
+    } catch (error) {
+      console.error("Error sending message:", error);
+      showToast(
+        error.message || "Failed to send message. Please try again.",
+        "error"
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -149,6 +217,7 @@ const Contact = () => {
                         type="text"
                         name="name"
                         required
+                        maxLength={100}
                         value={formData.name}
                         onChange={handleChange}
                         className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
@@ -163,6 +232,7 @@ const Contact = () => {
                         type="email"
                         name="email"
                         required
+                        maxLength={100}
                         value={formData.email}
                         onChange={handleChange}
                         className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
@@ -179,6 +249,7 @@ const Contact = () => {
                       type="text"
                       name="subject"
                       required
+                      maxLength={100}
                       value={formData.subject}
                       onChange={handleChange}
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
@@ -187,18 +258,40 @@ const Contact = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
-                      Message
-                    </label>
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-gray-300">
+                        Message
+                      </label>
+                      <span
+                        className={`text-xs font-semibold ${
+                          formData.message.length >= MAX_MESSAGE_LENGTH
+                            ? "text-red-500"
+                            : "text-gray-400"
+                        }`}
+                      >
+                        {formData.message.length}/{MAX_MESSAGE_LENGTH}
+                      </span>
+                    </div>
                     <textarea
                       name="message"
                       rows="6"
                       required
                       value={formData.message}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none"
+                      onPaste={handlePaste}
+                      maxLength={MAX_MESSAGE_LENGTH}
+                      className={`w-full px-4 py-3 rounded-xl border bg-gray-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none ${
+                        formData.message.length >= MAX_MESSAGE_LENGTH
+                          ? "border-red-300 dark:border-red-800 focus:ring-red-500"
+                          : "border-gray-200 dark:border-slate-600"
+                      }`}
                       placeholder="Tell us about your project..."
                     ></textarea>
+                    {formData.message.length >= MAX_MESSAGE_LENGTH && (
+                      <p className="text-red-500 text-xs mt-1 font-medium animate-pulse">
+                        Maximum character limit reached!
+                      </p>
+                    )}
                   </div>
 
                   <button
