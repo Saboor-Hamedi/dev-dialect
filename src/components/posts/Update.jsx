@@ -1,14 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "../../supabase";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Save, ArrowLeft, Image as ImageIcon, X } from "lucide-react";
+import { useToast } from "../../context/ToastContext";
 
-const CreatePost = (props) => {
+const Update = (props) => {
+  const { postId } = props; // Get post ID from props instead of URL
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
+  const [fetchingPost, setFetchingPost] = useState(true);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -17,6 +21,45 @@ const CreatePost = (props) => {
     price: "",
     is_public: false,
   });
+
+  // Fetch existing post data
+  useEffect(() => {
+    if (postId) {
+      fetchPost();
+    }
+  }, [postId]);
+
+  async function fetchPost() {
+    setFetchingPost(true);
+    try {
+      const { data, error } = await supabase
+        .from("posts")
+        .select("*")
+        .eq("id", postId)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setFormData({
+          title: data.title || "",
+          content: data.content || "",
+          image_url: data.image_url || "",
+          price: data.price || "",
+          is_public: data.is_public || false,
+        });
+        // Set image preview if there's an existing image
+        if (data.image_url) {
+          setImagePreview(data.image_url);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching post:", error);
+      showToast("Error loading post: " + error.message, "error");
+    } finally {
+      setFetchingPost(false);
+    }
+  }
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -50,7 +93,7 @@ const CreatePost = (props) => {
       const fileName = `${Math.random()
         .toString(36)
         .substring(2)}-${Date.now()}.${fileExt}`;
-      const filePath = `posts/${fileName}`;
+      const filePath = `update/${fileName}`;
 
       const { data, error } = await supabase.storage
         .from("images") // Make sure this bucket exists in Supabase
@@ -67,7 +110,7 @@ const CreatePost = (props) => {
       return publicUrl;
     } catch (error) {
       console.error("Error uploading image:", error);
-      alert("Error uploading image: " + error.message);
+      showToast("Error uploading image: " + error.message, "error");
       setUploading(false);
       return null;
     }
@@ -78,7 +121,7 @@ const CreatePost = (props) => {
     setLoading(true);
 
     try {
-      // Upload image first if there's a file
+      // Upload image first if there's a new file
       let imageUrl = formData.image_url;
       if (imageFile) {
         imageUrl = await uploadImage();
@@ -88,54 +131,67 @@ const CreatePost = (props) => {
         }
       }
 
-      // Insert post with image URL
+      // Update post with image URL
       const postData = {
         ...formData,
         image_url: imageUrl,
       };
 
-      const { error } = await supabase.from("posts").insert([postData]);
+      const { error } = await supabase
+        .from("posts")
+        .update(postData)
+        .eq("id", postId);
 
       if (error) throw error;
 
-      alert("Post created successfully!");
-      // Call onSuccess callback to switch back to posts view
+      showToast("Post updated successfully!", "success");
+      // Navigate back or call callback
       if (props.onSuccess) {
         props.onSuccess();
+      } else {
+        navigate("/dashboard");
       }
     } catch (error) {
-      console.error("Error creating post:", error);
-      alert("Error creating post: " + error.message);
+      console.error("Error updating post:", error);
+      showToast("Error updating post: " + error.message, "error");
     } finally {
       setLoading(false);
     }
   };
 
+  if (fetchingPost) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+    <div className="max-w-3xl mx-auto">
+      {/* Header - Compact design */}
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800 dark:text-white">
-            Create New Post
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
+            Update Post
           </h1>
-          <p className="text-gray-500 mt-1">
-            Add a new project or article to your portfolio
+          <p className="text-gray-500 mt-0.5 text-sm">
+            Edit your project or article
           </p>
         </div>
         <button
           onClick={() => props.onCancel && props.onCancel()}
-          className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-primary transition-colors"
+          className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-primary transition-colors text-sm"
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft size={16} />
           Back
         </button>
       </div>
 
-      {/* Form */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 md:p-8">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Title */}
+      {/* Form Container - Reduced padding for compact design */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-5 md:p-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Title Field */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Title
@@ -253,19 +309,19 @@ const CreatePost = (props) => {
             </label>
           </div>
 
-          {/* Submit Button */}
-          <div className="flex justify-end pt-4">
+          {/* Submit Button - Smaller size */}
+          <div className="flex justify-end pt-2">
             <button
               type="submit"
               disabled={loading || uploading}
-              className="bg-primary hover:bg-green-600 text-white px-6 py-2.5 rounded-lg flex items-center gap-2 shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-primary hover:bg-green-600 text-white px-5 py-2 rounded-lg flex items-center gap-2 shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
             >
-              <Save size={20} />
+              <Save size={16} />
               {uploading
                 ? "Uploading image..."
                 : loading
-                ? "Creating..."
-                : "Create Post"}
+                ? "Updating..."
+                : "Update Post"}
             </button>
           </div>
         </form>
@@ -274,4 +330,4 @@ const CreatePost = (props) => {
   );
 };
 
-export default CreatePost;
+export default Update;

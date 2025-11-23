@@ -2,11 +2,16 @@ import { useState, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import Hero from "./components/Hero";
-import Categories from "./components/Categories";
+import Categories from "./components/categories/Categories";
 import Features from "./components/Features";
-import Courses from "./components/Courses";
-import "./index.css";
+import Posts from "./components/clients/Posts";
 import Dashboard from "./components/dashboard/Dashboard";
+import Projects from "./components/Projects";
+import Show from "./components/posts/Show";
+import Update from "./components/posts/Update";
+import "./index.css";
+
+import { ToastProvider } from "./context/ToastContext";
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -22,43 +27,52 @@ function App() {
   const toggleTheme = () => setDarkMode(!darkMode);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-900 transition-colors duration-300 font-sans">
-      <Routes>
-        {/* Main Layout Route */}
-        <Route
-          path="/"
-          element={
-            <>
-              {/* Top Notification Bar */}
-              <div className="bg-slate-900 text-white text-xs py-2 text-center px-4">
-                Your learning journey begins here - now with an exclusive
-                discount!{" "}
-                <span className="text-secondary font-bold cursor-pointer">
-                  Hurry, offer ends soon!
-                </span>
-              </div>
+    <ToastProvider>
+      <div className="min-h-screen bg-white dark:bg-slate-900 transition-colors duration-300 font-sans">
+        <Routes>
+          {/* Main Layout Route */}
+          <Route
+            path="/"
+            element={
+              <>
+                {/* Top Notification Bar */}
 
-              <Header toggleTheme={toggleTheme} darkMode={darkMode} />
+                <Header toggleTheme={toggleTheme} darkMode={darkMode} />
 
-              <main>
-                <Hero />
-                <Categories />
-                <Features />
-                <Courses />
-              </main>
+                <main>
+                  <Hero />
+                  <Categories />
+                  {/* <Features /> */}
+                  <Posts />
+                </main>
 
-              {/* Simple Footer Placeholder */}
-              <footer className="bg-gray-100 dark:bg-slate-800 py-8 text-center text-gray-600 dark:text-gray-300 mt-12">
-                <p>© 2025 Upstudy. All rights reserved.</p>
-              </footer>
-            </>
-          }
-        />
+                {/* Simple Footer Placeholder */}
+                <footer className="bg-gray-100 dark:bg-slate-800 py-8 text-center text-gray-600 dark:text-gray-300 mt-12">
+                  <p>© 2025 Upstudy. All rights reserved.</p>
+                </footer>
+              </>
+            }
+          />
 
-        {/* Dashboard Route - No Header/Footer */}
-        <Route path="/dashboard" element={<Dashboard />} />
-      </Routes>
-    </div>
+          {/* Projects Route */}
+          <Route
+            path="/projects"
+            element={
+              <>
+                <Header toggleTheme={toggleTheme} darkMode={darkMode} />
+                <Projects />
+                <footer className="bg-gray-100 dark:bg-slate-800 py-8 text-center text-gray-600 dark:text-gray-300 mt-12">
+                  <p>© 2025 Upstudy. All rights reserved.</p>
+                </footer>
+              </>
+            }
+          />
+          <Route path="/show/:id" element={<Show />} />
+          <Route path="/posts/:id/update" element={<Update />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Routes>
+      </div>
+    </ToastProvider>
   );
 }
 

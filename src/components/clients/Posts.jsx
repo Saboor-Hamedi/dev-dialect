@@ -1,26 +1,27 @@
 import React, { useEffect, useState } from "react";
 import { BookOpen, Heart } from "lucide-react";
-import "../assets/Courses.css";
-import { supabase } from "../supabase";
+// import "../assets/Posts.css";
+import { supabase } from "../../supabase";
 import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom"; // Add this import
-const Courses = () => {
+import { Link } from "react-router-dom";
+
+const Posts = () => {
   const navigate = useNavigate();
-  const [courses, setCourses] = useState([]);
+  const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchCourses();
+    fetchPosts();
   }, []);
 
-  async function fetchCourses() {
+  async function fetchPosts() {
     try {
-      // This is the SQL equivalent: SELECT * FROM posts
+      // This is the SQL equivalent: SELECT * FROM Posts
       const { data, error } = await supabase.from("posts").select("*");
 
       if (error) throw error;
 
-      setCourses(data || []);
+      setPosts(data || []);
     } catch (error) {
       console.error("Error fetching data:", error.message);
     } finally {
@@ -36,24 +37,27 @@ const Courses = () => {
   return (
     <section className="py-16 bg-gray-50 dark:bg-slate-900 transition-colors">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-10">
-          My Projects
-        </h2>
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
+            Top Posts
+          </h2>
+          <div className="h-1 w-20 bg-yellow-400 mx-auto mt-2 rounded-full"></div>
+        </div>
 
         {/* If no projects found */}
-        {courses.length === 0 && <p>No projects found in the database.</p>}
+        {posts.length === 0 && <p>No projects found in the database.</p>}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {courses.map((course) => (
+          {posts.map((post) => (
             <div
-              key={course.id}
+              key={post.id}
               className="course-card bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all group"
             >
               <div className="relative">
                 {/* Use a default image if image_url is empty */}
                 <img
-                  src={course.image_url || "https://via.placeholder.com/400"}
-                  alt={course.title}
+                  src={post.image_url || "https://via.placeholder.com/400"}
+                  alt={post.title}
                   className="w-full h-48 object-cover"
                 />
                 <div className="absolute top-4 left-4">
@@ -65,12 +69,12 @@ const Courses = () => {
 
               <div className="p-5">
                 <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-4 line-clamp-2 h-14">
-                  {course.title}
+                  {post.title}
                 </h3>
 
                 <div className="flex items-center gap-2 text-gray-500 text-sm mb-4">
                   <BookOpen size={16} className="text-secondary" />
-                  <span>{course.content || 0} Posts</span>
+                  <span>{post.content || 0} Posts</span>
                   {/* Or change this to display Description */}
                 </div>
 
@@ -78,10 +82,10 @@ const Courses = () => {
 
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-green-500">
-                    {course.price || "Free"}
+                    {post.price || "Free"}
                   </span>
                   <Link
-                    to={`/dashboard`}
+                    to={`/show/${post.id}`}
                     className="text-sm font-semibold text-slate-700 dark:text-gray-300 hover:text-primary"
                   >
                     View Details
@@ -96,4 +100,4 @@ const Courses = () => {
   );
 };
 
-export default Courses;
+export default Posts;
