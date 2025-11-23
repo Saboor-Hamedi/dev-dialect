@@ -55,7 +55,8 @@ const Posts = () => {
           {posts.map((post) => (
             <div
               key={post.id}
-              className="course-card bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all group flex flex-col h-full"
+              className="course-card bg-white dark:bg-slate-800 rounded-2xl 
+              overflow-hidden shadow-sm hover:shadow-xl transition-all group flex flex-col h-full"
             >
               <div className="relative">
                 {/* Use a default image if image_url is empty */}

@@ -39,7 +39,7 @@ const Hero = () => {
           {/* Image Placeholder */}
           <div className="relative z-10">
             <img
-              src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=600"
+              src="https://placehold.co/400"
               alt="Student Learning"
               className="rounded-3xl shadow-2xl w-full max-w-md mx-auto object-cover h-[500px]"
             />

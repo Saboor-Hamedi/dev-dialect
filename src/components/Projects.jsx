@@ -1,53 +1,77 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../supabase";
-import { Calendar, TrendingUp, Clock, Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
+import {
+  Calendar,
+  TrendingUp,
+  Clock,
+  Sparkles,
+  Search as SearchIcon,
+} from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
 
 const Projects = () => {
   const [newPosts, setNewPosts] = useState([]);
   const [popularPosts, setPopularPosts] = useState([]);
   const [oldPosts, setOldPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchParams] = useSearchParams();
+  const searchQuery = searchParams.get("q") || "";
 
   useEffect(() => {
     fetchAllPosts();
-  }, []);
+  }, [searchQuery]);
 
   async function fetchAllPosts() {
     setLoading(true);
     try {
-      // Fetch all public posts
-      const { data, error } = await supabase
+      // Build query
+      let query = supabase
         .from("posts")
         .select("*")
         .eq("is_public", true)
         .order("created_at", { ascending: false });
 
+      // Add search filter if query exists
+      if (searchQuery) {
+        query = query.or(
+          `title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`
+        );
+      }
+
+      const { data, error } = await query;
+
       if (error) throw error;
 
       if (data) {
-        // Categorize posts
-        const now = new Date();
-        const thirtyDaysAgo = new Date(now.setDate(now.getDate() - 30));
-        const ninetyDaysAgo = new Date(now.setDate(now.getDate() - 60)); // 90 days total
+        // If searching, show all results in one section
+        if (searchQuery) {
+          setNewPosts(data);
+          setPopularPosts([]);
+          setOldPosts([]);
+        } else {
+          // Categorize posts
+          const now = new Date();
+          const thirtyDaysAgo = new Date(now.setDate(now.getDate() - 30));
+          const ninetyDaysAgo = new Date(now.setDate(now.getDate() - 60)); // 90 days total
 
-        // News Posts: Last 30 days (limit to 6)
-        const recent = data
-          .filter((post) => new Date(post.created_at) >= thirtyDaysAgo)
-          .slice(0, 6);
+          // News Posts: Last 30 days (limit to 6)
+          const recent = data
+            .filter((post) => new Date(post.created_at) >= thirtyDaysAgo)
+            .slice(0, 6);
 
-        // Most Read Posts: Sort by ID (as proxy for popularity) - limit to 6
-        // If you have a views column, replace this with: .sort((a, b) => b.views - a.views)
-        const popular = [...data].sort((a, b) => b.id - a.id).slice(0, 6);
+          // Most Read Posts: Sort by ID (as proxy for popularity) - limit to 6
+          // If you have a views column, replace this with: .sort((a, b) => b.views - a.views)
+          const popular = [...data].sort((a, b) => b.id - a.id).slice(0, 6);
 
-        // Old Posts: Older than 90 days (limit to 6)
-        const old = data
-          .filter((post) => new Date(post.created_at) < ninetyDaysAgo)
-          .slice(0, 6);
+          // Old Posts: Older than 90 days (limit to 6)
+          const old = data
+            .filter((post) => new Date(post.created_at) < ninetyDaysAgo)
+            .slice(0, 6);
 
-        setNewPosts(recent);
-        setPopularPosts(popular);
-        setOldPosts(old);
+          setNewPosts(recent);
+          setPopularPosts(popular);
+          setOldPosts(old);
+        }
       }
     } catch (error) {
       console.error("Error fetching posts:", error.message);
