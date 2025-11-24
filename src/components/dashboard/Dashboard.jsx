@@ -10,6 +10,8 @@ import {
   X,
   Plus,
   MessageSquare,
+  Heart,
+  User,
 } from "lucide-react";
 import Overview from "./Overview";
 import Show from "../posts/Show";
@@ -17,6 +19,7 @@ import Index from "../posts/Index";
 import Create from "../posts/Create";
 import Update from "../posts/Update";
 import Contacts from "./Contacts";
+import Bookmarks from "./Bookmarks";
 
 import Settings from "./settings/Settings";
 
@@ -26,8 +29,12 @@ const Dashboard = () => {
   const [activeView, setActiveView] = useState(
     localStorage.getItem("dashboardView") || "overview"
   );
-  const [editingPostId, setEditingPostId] = useState(null);
-  const [viewingPostId, setViewingPostId] = useState(null);
+  const [editingPostId, setEditingPostId] = useState(
+    localStorage.getItem("editingPostId") || null
+  );
+  const [viewingPostId, setViewingPostId] = useState(
+    localStorage.getItem("viewingPostId") || null
+  );
   const [unreadCount, setUnreadCount] = useState(0);
 
   // Fetch unread contacts count
@@ -149,6 +156,36 @@ const Dashboard = () => {
 
             <button
               onClick={() => {
+                handleViewChange("bookmarks");
+                setSidebarOpen(false);
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm ${
+                activeView === "bookmarks"
+                  ? "bg-primary/10 text-primary font-semibold"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
+              }`}
+            >
+              <Heart size={18} />
+              Saved Posts
+            </button>
+
+            <button
+              onClick={async () => {
+                const {
+                  data: { session },
+                } = await supabase.auth.getSession();
+                if (session) {
+                  navigate(`/profile/${session.user.id}`);
+                }
+              }}
+              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
+            >
+              <User size={18} />
+              View My Profile
+            </button>
+
+            <button
+              onClick={() => {
                 handleViewChange("contacts");
                 setSidebarOpen(false);
               }}
@@ -241,6 +278,7 @@ const Dashboard = () => {
                   }}
                   onView={(postId) => {
                     setViewingPostId(postId);
+                    localStorage.setItem("viewingPostId", postId);
                     handleViewChange("show");
                   }}
                 />
@@ -259,10 +297,23 @@ const Dashboard = () => {
               <Contacts onCountChange={fetchUnreadCount} />
             )}
 
+            {activeView === "bookmarks" && (
+              <Bookmarks
+                onView={(postId) => {
+                  setViewingPostId(postId);
+                  localStorage.setItem("viewingPostId", postId);
+                  handleViewChange("show");
+                }}
+              />
+            )}
+
             {activeView === "update" && (
               <Update
                 postId={editingPostId}
                 onSuccess={() => {
+                  handleViewChange("posts");
+                }}
+                onCancel={() => {
                   handleViewChange("posts");
                 }}
               />
@@ -272,6 +323,10 @@ const Dashboard = () => {
               <Show
                 postId={viewingPostId}
                 onBack={() => handleViewChange("posts")}
+                onEdit={(postId) => {
+                  setEditingPostId(postId);
+                  handleViewChange("update");
+                }}
               />
             )}
 

@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Home, Search, ArrowLeft, FileQuestion } from "lucide-react";
 
-const NotFound = () => {
+const NotFound = ({ onBack }) => {
   const navigate = useNavigate();
 
   return (
@@ -32,7 +32,7 @@ const NotFound = () => {
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <button
-            onClick={() => navigate(-1)}
+            onClick={onBack || (() => navigate(-1))}
             className="flex items-center gap-2 px-6 py-3 bg-gray-100 dark:bg-slate-700 text-slate-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-slate-600 transition-all group"
           >
             <ArrowLeft

@@ -7,12 +7,11 @@ const CodeBlock = ({ node, inline, className, children, ...props }) => {
   const [isCopied, setIsCopied] = useState(false);
   const match = /language-(\w+)/.exec(className || "");
 
-  // Handle inline code (single backticks) or code without a language specified
-  // This prevents the heavy block renderer from taking over simple <code> tags in tables/lists
-  if (inline || !match) {
+  // Handle inline code (single backticks) - NO copy button, just highlight
+  if (inline) {
     return (
       <code
-        className={`${className} bg-gray-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-sm font-mono text-pink-500`}
+        className="bg-gray-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-sm font-mono text-pink-500"
         {...props}
       >
         {children}
@@ -20,11 +19,15 @@ const CodeBlock = ({ node, inline, className, children, ...props }) => {
     );
   }
 
+  // For code blocks (triple backticks) - WITH copy button and syntax highlighting
+  const language = match ? match[1] : "text";
+
   const handleCopy = async () => {
     if (!children) return;
 
     try {
-      await navigator.clipboard.writeText(String(children).replace(/\n$/, ""));
+      const content = String(children).replace(/\n$/, "");
+      await navigator.clipboard.writeText(content);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     } catch (err) {
@@ -50,7 +53,7 @@ const CodeBlock = ({ node, inline, className, children, ...props }) => {
 
       <SyntaxHighlighter
         style={vscDarkPlus}
-        language={match[1]}
+        language={language}
         PreTag="div"
         className="!m-0 !rounded-lg !bg-slate-900 !p-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent"
         showLineNumbers={true}

@@ -38,3 +38,19 @@
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #64748b;
 }
+
+/* Remove backticks from code elements */
+code::before,
+code::after,
+pre code::before,
+pre code::after,
+.prose code::before,
+.prose code::after {
+  content: none !important;
+}
+
+/* Ensure inline code doesn't have quotes */
+:not(pre) > code::before,
+:not(pre) > code::after {
+  content: "" !important;
+}

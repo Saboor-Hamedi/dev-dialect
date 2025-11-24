@@ -13,6 +13,10 @@ const Account = () => {
     email: "",
     bio: "",
     avatar_url: "",
+    twitter: "",
+    facebook: "",
+    github: "",
+    website: "",
   });
 
   // Password state
@@ -50,6 +54,10 @@ const Account = () => {
             email: user.email, // Email comes from auth
             bio: data.bio || "",
             avatar_url: data.avatar_url || "",
+            twitter: data.twitter || "",
+            facebook: data.facebook || "",
+            github: data.github || "",
+            website: data.website || "",
           });
         } else {
           // If no profile exists yet, just set email
@@ -71,6 +79,10 @@ const Account = () => {
         full_name: profile.full_name,
         bio: profile.bio,
         avatar_url: profile.avatar_url,
+        twitter: profile.twitter,
+        facebook: profile.facebook,
+        github: profile.github,
+        website: profile.website,
         updated_at: new Date(),
       });
 
@@ -251,6 +263,74 @@ const Account = () => {
                 className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5"
                 placeholder="Write a short bio..."
               ></textarea>
+            </div>
+          </div>
+
+          {/* Social Media Section */}
+          <div className="pt-6 border-t border-gray-200 dark:border-slate-700">
+            <h4 className="text-sm font-semibold text-slate-700 dark:text-gray-300 mb-4">
+              Social Media Links
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700 dark:text-gray-300">
+                  Twitter Username
+                </label>
+                <input
+                  type="text"
+                  value={profile.twitter}
+                  onChange={(e) =>
+                    setProfile({ ...profile, twitter: e.target.value })
+                  }
+                  placeholder="username"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700 dark:text-gray-300">
+                  Facebook Username
+                </label>
+                <input
+                  type="text"
+                  value={profile.facebook}
+                  onChange={(e) =>
+                    setProfile({ ...profile, facebook: e.target.value })
+                  }
+                  placeholder="username"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700 dark:text-gray-300">
+                  GitHub Username
+                </label>
+                <input
+                  type="text"
+                  value={profile.github}
+                  onChange={(e) =>
+                    setProfile({ ...profile, github: e.target.value })
+                  }
+                  placeholder="username"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700 dark:text-gray-300">
+                  Website URL
+                </label>
+                <input
+                  type="url"
+                  value={profile.website}
+                  onChange={(e) =>
+                    setProfile({ ...profile, website: e.target.value })
+                  }
+                  placeholder="https://yourwebsite.com"
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5"
+                />
+              </div>
             </div>
           </div>
 

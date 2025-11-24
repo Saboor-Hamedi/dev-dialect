@@ -14,11 +14,12 @@ const Posts = () => {
 
   async function fetchPosts() {
     try {
-      // Fetch only 4 PUBLIC posts, ordered by creation date, with author info
+      // Fetch only 4 PUBLIC & FEATURED posts, ordered by creation date
       const { data, error } = await supabase
         .from("posts")
         .select("*, profiles(full_name, avatar_url)")
-        .eq("is_public", true) // Security: Only fetch public posts
+        .eq("is_public", true)
+        .eq("is_featured", true) // Only fetch featured posts
         .order("created_at", { ascending: false })
         .limit(4);
 

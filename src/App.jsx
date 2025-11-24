@@ -14,6 +14,7 @@ import Login from "./components/auth/Login";
 import ResetPassword from "./components/auth/ResetPassword";
 import Contact from "./components/Contact";
 import About from "./components/About";
+import Profile from "./components/Profile";
 import NotFound from "./components/NotFound";
 import "./index.css";
 
@@ -175,9 +176,23 @@ function App() {
             }
           />
 
+          {/* Public Profile Route */}
+          <Route
+            path="/profile/:userId"
+            element={
+              <>
+                <Header toggleTheme={toggleTheme} darkMode={darkMode} />
+                <Profile />
+                <footer className="bg-gray-100 dark:bg-slate-800 py-8 text-center text-gray-600 dark:text-gray-300">
+                  <p>© 2025 Upstudy. All rights reserved.</p>
+                </footer>
+              </>
+            }
+          />
+
           {/* Update route should also be protected */}
           <Route
-            path="/posts/:id/update"
+            path="/posts/:slug/update"
             element={
               <ProtectedRoute>
                 <Update />

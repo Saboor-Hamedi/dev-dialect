@@ -10,23 +10,116 @@ import {
   Bookmark,
   ExternalLink,
   Github,
+  BarChart2,
+  Edit,
+  Trash2,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import CodeBlock from "../ui/CodeBlock";
 import { Skeleton } from "../ui/Skeleton";
+import NotFound from "../NotFound";
+import ConfirmModal from "../ui/ConfirmModal";
 
-const Show = ({ postId, onBack }) => {
+const Show = ({ postId, onBack, onEdit }) => {
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [bookmarking, setBookmarking] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     if (postId) {
       fetchPost();
+    } else {
+      setLoading(false);
     }
   }, [postId]);
 
+  useEffect(() => {
+    if (post?.id) {
+      checkIfBookmarked();
+    }
+  }, [post?.id]);
+
+  const checkIfBookmarked = async () => {
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from("bookmarks")
+        .select("id")
+        .eq("post_id", post.id)
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+
+      if (data) {
+        setIsBookmarked(true);
+      }
+    } catch (error) {
+      // Not bookmarked or error
+      setIsBookmarked(false);
+    }
+  };
+
+  const handleBookmark = async () => {
+    try {
+      setBookmarking(true);
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) return;
+
+      if (isBookmarked) {
+        // Remove bookmark
+        const { error } = await supabase
+          .from("bookmarks")
+          .delete()
+          .eq("post_id", post.id)
+          .eq("user_id", session.user.id);
+
+        if (error) throw error;
+        setIsBookmarked(false);
+      } else {
+        // Add bookmark
+        const { error } = await supabase.from("bookmarks").insert({
+          post_id: post.id,
+          user_id: session.user.id,
+        });
+
+        if (error) throw error;
+        setIsBookmarked(true);
+      }
+    } catch (error) {
+      console.error("Error bookmarking:", error);
+    } finally {
+      setBookmarking(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      const { error } = await supabase.from("posts").delete().eq("id", post.id);
+
+      if (error) throw error;
+
+      if (onBack) onBack();
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      alert("Error deleting post: " + error.message);
+    }
+  };
+
   async function fetchPost() {
+    if (!postId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       // Get current user session for security check
@@ -45,7 +138,6 @@ const Show = ({ postId, onBack }) => {
         .from("posts")
         .select("*, profiles(full_name, avatar_url)")
         .eq("id", postId)
-        .eq("user_id", session.user.id) // Security: Only fetch posts owned by current user
         .single();
 
       if (error) {
@@ -64,7 +156,7 @@ const Show = ({ postId, onBack }) => {
 
   if (loading) {
     return (
-      <article className="relative">
+      <article className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-slate-900 dark:to-slate-800">
         {/* Banner Skeleton */}
         <Skeleton className="w-full h-[150px]" />
 
@@ -106,18 +198,7 @@ const Show = ({ postId, onBack }) => {
   }
 
   if (!post) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-            Post not found
-          </h2>
-          <button onClick={onBack} className="text-primary hover:underline">
-            Go back
-          </button>
-        </div>
-      </div>
-    );
+    return <NotFound onBack={onBack} />;
   }
 
   return (
@@ -137,20 +218,48 @@ const Show = ({ postId, onBack }) => {
         <div className="max-w-6xl mx-auto">
           {/* Main Content Card - Centered with max-w-4xl */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6 md:p-10 max-w-4xl mx-auto">
-            {/* Back Button */}
-            <button
-              onClick={onBack}
-              className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary mb-6 transition-colors group"
-            >
-              <ArrowLeft
-                size={20}
-                className="group-hover:-translate-x-1 transition-transform"
-              />
-              <span className="font-medium">Back to Posts</span>
-            </button>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+              <button
+                onClick={onBack}
+                className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors group"
+              >
+                <ArrowLeft
+                  size={20}
+                  className="group-hover:-translate-x-1 transition-transform"
+                />
+                <span className="font-medium">Back to Posts</span>
+              </button>
+
+              {/* Owner Controls */}
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 border border-gray-200 dark:border-slate-600 rounded-lg transition-colors"
+                  title="View Statistics"
+                >
+                  <BarChart2 size={16} />
+                  <span className="hidden sm:inline">Stats</span>
+                </button>
+
+                <button
+                  onClick={() => onEdit && onEdit(post.id)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-primary hover:bg-green-600 rounded-lg transition-all"
+                >
+                  <Edit size={16} />
+                  <span className="hidden sm:inline">Edit</span>
+                </button>
+
+                <button
+                  onClick={() => setShowDeleteModal(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg transition-colors"
+                >
+                  <Trash2 size={16} />
+                  <span className="hidden sm:inline">Delete</span>
+                </button>
+              </div>
+            </div>
 
             {/* Title */}
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white mb-6 leading-tight">
+            <h1 className="text-xl md:text-2xl lg:text-3xl font-extrabold text-slate-900 dark:text-white mb-6 leading-tight">
               {post.title}
             </h1>
 
@@ -201,8 +310,22 @@ const Show = ({ postId, onBack }) => {
                 <button className="p-2 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-full transition-colors">
                   <Share2 size={20} />
                 </button>
-                <button className="p-2 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-full transition-colors">
-                  <Bookmark size={20} />
+                <button
+                  onClick={handleBookmark}
+                  disabled={bookmarking}
+                  className={`p-2 rounded-full transition-colors ${
+                    isBookmarked
+                      ? "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20"
+                      : "text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  }`}
+                  title={
+                    isBookmarked ? "Remove from favorites" : "Add to favorites"
+                  }
+                >
+                  <Bookmark
+                    size={20}
+                    fill={isBookmarked ? "currentColor" : "none"}
+                  />
                 </button>
               </div>
             </div>
@@ -260,6 +383,16 @@ const Show = ({ postId, onBack }) => {
                 remarkPlugins={[remarkGfm]}
                 components={{
                   code: CodeBlock,
+                  pre: ({ children }) => <>{children}</>,
+                  p: ({ children, node }) => {
+                    // Check if paragraph contains a code block
+                    if (
+                      node?.children?.some((child) => child.tagName === "code")
+                    ) {
+                      return <div>{children}</div>;
+                    }
+                    return <p>{children}</p>;
+                  },
                 }}
               >
                 {post.content}
@@ -268,6 +401,18 @@ const Show = ({ postId, onBack }) => {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDelete}
+        title="Delete Post"
+        message="Are you sure you want to delete this post? This action cannot be undone and all data will be permanently removed."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
     </article>
   );
 };
