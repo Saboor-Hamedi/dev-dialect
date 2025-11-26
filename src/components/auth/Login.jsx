@@ -230,7 +230,7 @@ const Login = () => {
             </form>
 
             {/* Toggle Sign In/Up */}
-            <div className="mt-6 text-center">
+            {/* <div className="mt-6 text-center">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-200 dark:border-slate-700"></div>
@@ -253,7 +253,7 @@ const Login = () => {
               >
                 {isSignUp ? "Sign In Instead" : "Create Account"}
               </button>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
