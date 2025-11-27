@@ -25,6 +25,8 @@ import Contacts from "./Contacts";
 import Bookmarks from "./Bookmarks";
 import Settings from "./settings/Settings";
 
+import CommandPalette from "../CommandPalette";
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -40,6 +42,7 @@ const Dashboard = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [userProfile, setUserProfile] = useState(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   // Open sidebar by default on large screens
   useEffect(() => {
@@ -54,6 +57,18 @@ const Dashboard = () => {
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Keyboard shortcut for Command Palette
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   // Fetch user profile
@@ -145,17 +160,21 @@ const Dashboard = () => {
           </div>
 
           <div className="hidden md:flex flex-1 max-w-md">
-            <div className="relative w-full">
+            <button
+              onClick={() => setIsCommandPaletteOpen(true)}
+              className="w-full flex items-center gap-3 px-4 py-2 bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-600 transition-all group"
+            >
               <Search
-                size={18}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                size={16}
+                className="group-hover:text-primary transition-colors"
               />
-              <input
-                type="text"
-                placeholder="Search posts..."
-                className="w-full pl-10 pr-4 py-2 bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-              />
-            </div>
+              <span className="flex-1 text-left">Search posts...</span>
+              <div className="flex items-center gap-1">
+                <kbd className="px-1.5 py-0.5 text-xs font-semibold bg-white dark:bg-slate-800 rounded border border-gray-300 dark:border-slate-500">
+                  ⌘K
+                </kbd>
+              </div>
+            </button>
           </div>
 
           <div className="flex items-center gap-2">
@@ -483,6 +502,12 @@ const Dashboard = () => {
           </div>
         </main>
       </div>
+
+      {/* Command Palette */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+      />
     </div>
   );
 };
