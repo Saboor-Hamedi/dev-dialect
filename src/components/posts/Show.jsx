@@ -66,6 +66,32 @@ const Show = ({ postId, onBack, onEdit }) => {
     }
   };
 
+  // Share post with Web Share API
+  const handleShare = async () => {
+    const publicUrl = `${window.location.origin}/post/${post.slug}`;
+    const shareData = {
+      title: post?.title || "Check out this post",
+      text: post?.title || "Check out this post on DevDialect",
+      url: publicUrl,
+    };
+
+    try {
+      // Check if Web Share API is supported
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback: copy link to clipboard
+        await navigator.clipboard.writeText(publicUrl);
+        alert("Link copied to clipboard!");
+      }
+    } catch (err) {
+      // User cancelled or error occurred
+      if (err.name !== "AbortError") {
+        console.error("Error sharing:", err);
+      }
+    }
+  };
+
   const handleBookmark = async () => {
     try {
       setBookmarking(true);
@@ -307,7 +333,11 @@ const Show = ({ postId, onBack, onEdit }) => {
               </div>
 
               <div className="ml-auto flex gap-2">
-                <button className="p-2 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-full transition-colors">
+                <button
+                  onClick={handleShare}
+                  className="p-2 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-full transition-colors"
+                  title="Share this post"
+                >
                   <Share2 size={20} />
                 </button>
                 <button
@@ -332,7 +362,7 @@ const Show = ({ postId, onBack, onEdit }) => {
 
             {/* Project Details: Tags & Links */}
             {(post.tags?.length > 0 || post.demo_url || post.repo_url) && (
-              <div className="bg-gray-50 dark:bg-slate-700/30 rounded-xl p-6 mb-8 border border-gray-100 dark:border-slate-700">
+              <div className="bg-gray-50 dark:bg-slate-700/30 rounded-xl p-4 mb-8 border border-gray-100 dark:border-slate-700">
                 <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
                   {/* Tags */}
                   {post.tags?.length > 0 && (
@@ -340,7 +370,7 @@ const Show = ({ postId, onBack, onEdit }) => {
                       {post.tags.map((tag, index) => (
                         <span
                           key={index}
-                          className="px-3 py-1 bg-white dark:bg-slate-800 text-slate-700 dark:text-gray-300 text-sm font-medium rounded-full border border-gray-200 dark:border-slate-600 shadow-sm"
+                          className="px-2 py-0.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-gray-300 text-xs font-medium rounded-full border border-gray-200 dark:border-slate-600 shadow-sm"
                         >
                           {tag}
                         </span>
@@ -355,9 +385,9 @@ const Show = ({ postId, onBack, onEdit }) => {
                         href={post.demo_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-primary hover:bg-green-600 text-white rounded-lg font-semibold transition-all shadow-md hover:shadow-lg"
+                        className="flex-1 md:flex-none flex items-center justify-center gap-1 px-2.5 py-1 bg-primary hover:bg-green-600 text-white text-xs rounded-md font-semibold transition-all shadow-sm hover:shadow-md"
                       >
-                        <ExternalLink size={18} />
+                        <ExternalLink size={12} />
                         Live Demo
                       </a>
                     )}
@@ -366,9 +396,9 @@ const Show = ({ postId, onBack, onEdit }) => {
                         href={post.repo_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-900 dark:bg-slate-900 dark:hover:bg-black text-white rounded-lg font-semibold transition-all shadow-md hover:shadow-lg"
+                        className="flex-1 md:flex-none flex items-center justify-center gap-1 px-2.5 py-1 bg-slate-800 hover:bg-slate-900 dark:bg-slate-900 dark:hover:bg-black text-white text-xs rounded-md font-semibold transition-all shadow-sm hover:shadow-md"
                       >
-                        <Github size={18} />
+                        <Github size={12} />
                         View Code
                       </a>
                     )}
@@ -393,6 +423,13 @@ const Show = ({ postId, onBack, onEdit }) => {
                     }
                     return <p>{children}</p>;
                   },
+                  table: ({ children }) => (
+                    <div className="overflow-x-auto my-4 border border-gray-200 dark:border-slate-700 rounded-lg">
+                      <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                        {children}
+                      </table>
+                    </div>
+                  ),
                 }}
               >
                 {post.content}

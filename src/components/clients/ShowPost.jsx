@@ -8,8 +8,6 @@ import {
   Clock,
   Share2,
   Bookmark,
-  Link2,
-  Check,
   ArrowUp,
   ExternalLink,
   Github,
@@ -23,13 +21,13 @@ import remarkGfm from "remark-gfm";
 import CodeBlock from "../ui/CodeBlock";
 import { Skeleton } from "../ui/Skeleton";
 import ConfirmModal from "../ui/ConfirmModal";
+import { Helmet } from "react-helmet-async";
 
 const ShowPost = () => {
   const { slug } = useParams(); // Changed from id to slug
   const navigate = useNavigate();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [session, setSession] = useState(null);
@@ -47,32 +45,53 @@ const ShowPost = () => {
 
   // Track reading progress and scroll position
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      const windowHeight = window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
-      const scrollTop = window.scrollY;
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const windowHeight = window.innerHeight;
+          const documentHeight = document.documentElement.scrollHeight;
+          const scrollTop = window.scrollY;
 
-      // Calculate reading progress
-      const totalHeight = documentHeight - windowHeight;
-      const progress = (scrollTop / totalHeight) * 100;
-      setReadingProgress(Math.min(progress, 100));
+          // Calculate reading progress
+          const totalHeight = documentHeight - windowHeight;
+          const progress = (scrollTop / totalHeight) * 100;
+          setReadingProgress(Math.min(progress, 100));
 
-      // Show scroll to top button after scrolling 300px
-      setShowScrollTop(scrollTop > 300);
+          // Show scroll to top button after scrolling 300px
+          setShowScrollTop(scrollTop > 300);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Copy link to clipboard
-  const handleCopyLink = async () => {
+  // Share post with Web Share API
+  const handleShare = async () => {
+    const shareData = {
+      title: post?.title || "Check out this post",
+      text: post?.title || "Check out this post on DevDialect",
+      url: window.location.href,
+    };
+
     try {
-      await navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      // Check if Web Share API is supported
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback: copy link to clipboard
+        await navigator.clipboard.writeText(window.location.href);
+        alert("Link copied to clipboard!");
+      }
     } catch (err) {
-      console.error("Failed to copy:", err);
+      // User cancelled or error occurred
+      if (err.name !== "AbortError") {
+        console.error("Error sharing:", err);
+      }
     }
   };
 
@@ -255,6 +274,41 @@ const ShowPost = () => {
 
   return (
     <article className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-slate-900 dark:to-slate-800">
+      {/* Dynamic Meta Tags for Social Media Previews */}
+      <Helmet>
+        <title>{post.title} | DevDialect</title>
+        <meta
+          name="description"
+          content={post.content?.substring(0, 160).replace(/[#*`]/g, "")}
+        />
+
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content={window.location.href} />
+        <meta property="og:title" content={post.title} />
+        <meta
+          property="og:description"
+          content={post.content?.substring(0, 160).replace(/[#*`]/g, "")}
+        />
+        <meta
+          property="og:image"
+          content={post.image_url || "https://dev-dialect.com/logo.svg"}
+        />
+
+        {/* Twitter */}
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content={window.location.href} />
+        <meta property="twitter:title" content={post.title} />
+        <meta
+          property="twitter:description"
+          content={post.content?.substring(0, 160).replace(/[#*`]/g, "")}
+        />
+        <meta
+          property="twitter:image"
+          content={post.image_url || "https://dev-dialect.com/logo.svg"}
+        />
+      </Helmet>
+
       {/* Banner Image - Full Width, 150px Height */}
       <div className="w-full h-[150px] bg-gradient-to-r from-primary/20 to-green-600/20 dark:from-primary/30 dark:to-green-600/30 relative overflow-hidden">
         <img
@@ -372,6 +426,13 @@ const ShowPost = () => {
 
               <div className="ml-auto flex gap-2">
                 <button
+                  onClick={handleShare}
+                  className="p-2 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-full transition-colors"
+                  title="Share this post"
+                >
+                  <Share2 size={20} />
+                </button>
+                <button
                   onClick={handleBookmark}
                   disabled={bookmarking}
                   className={`p-2 rounded-full transition-colors ${
@@ -388,23 +449,12 @@ const ShowPost = () => {
                     fill={isBookmarked ? "currentColor" : "none"}
                   />
                 </button>
-                <button
-                  onClick={handleCopyLink}
-                  className={`p-2 rounded-full transition-colors ${
-                    copied
-                      ? "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20"
-                      : "text-gray-400 hover:text-primary hover:bg-primary/10"
-                  }`}
-                  title="Copy link to clipboard"
-                >
-                  {copied ? <Check size={20} /> : <Link2 size={20} />}
-                </button>
               </div>
             </div>
 
             {/* Project Details: Tags & Links */}
             {(post.tags?.length > 0 || post.demo_url || post.repo_url) && (
-              <div className="bg-gray-50 dark:bg-slate-700/30 rounded-xl p-6 mb-8 border border-gray-100 dark:border-slate-700">
+              <div className="bg-gray-50 dark:bg-slate-700/30 rounded-xl p-2 mb-8 border border-gray-100 dark:border-slate-700">
                 <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
                   {/* Tags */}
                   {post.tags?.length > 0 && (
@@ -412,7 +462,7 @@ const ShowPost = () => {
                       {post.tags.map((tag, index) => (
                         <span
                           key={index}
-                          className="px-3 py-1 bg-white dark:bg-slate-800 text-slate-700 dark:text-gray-300 text-sm font-medium rounded-full border border-gray-200 dark:border-slate-600 shadow-sm"
+                          className="px-2 py-0.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-gray-300 text-xs font-medium rounded-full border border-gray-200 dark:border-slate-600 shadow-sm"
                         >
                           {tag}
                         </span>
@@ -427,9 +477,9 @@ const ShowPost = () => {
                         href={post.demo_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-primary hover:bg-green-600 text-white rounded-lg font-semibold transition-all shadow-md hover:shadow-lg"
+                        className="flex-1 md:flex-none flex items-center justify-center gap-1 px-2.5 py-1 bg-primary hover:bg-green-600 text-white text-xs rounded-md font-semibold transition-all shadow-sm hover:shadow-md"
                       >
-                        <ExternalLink size={18} />
+                        <ExternalLink size={12} />
                         Live Demo
                       </a>
                     )}
@@ -438,9 +488,9 @@ const ShowPost = () => {
                         href={post.repo_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-900 dark:bg-slate-900 dark:hover:bg-black text-white rounded-lg font-semibold transition-all shadow-md hover:shadow-lg"
+                        className="flex-1 md:flex-none flex items-center justify-center gap-1 px-2.5 py-1 bg-slate-800 hover:bg-slate-900 dark:bg-slate-900 dark:hover:bg-black text-white text-xs rounded-md font-semibold transition-all shadow-sm hover:shadow-md"
                       >
-                        <Github size={18} />
+                        <Github size={12} />
                         View Code
                       </a>
                     )}
@@ -465,6 +515,13 @@ const ShowPost = () => {
                     }
                     return <p>{children}</p>;
                   },
+                  table: ({ children }) => (
+                    <div className="overflow-x-auto my-4 border border-gray-200 dark:border-slate-700 rounded-lg">
+                      <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                        {children}
+                      </table>
+                    </div>
+                  ),
                 }}
               >
                 {post.content}
